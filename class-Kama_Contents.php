@@ -6,6 +6,8 @@
  * Author: Kama
  * Page: http://wp-kama.ru/?p=1513
  * ver: 3.15
+ *
+ * Changelog: http://wp-kama.ru/?p=1513#obnovleniya
  */
 class Kama_Contents {
 
