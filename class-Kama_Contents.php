@@ -6,12 +6,9 @@
  * Author: Kama
  * Page: http://wp-kama.ru/?p=1513
  * ver: 3.15
- *
- * Changelog: http://wp-kama.ru/?p=1513#obnovleniya
  */
 class Kama_Contents {
 
-	// defaults options
 	public $opt = array(
 		// Отступ слева у подразделов в px.
 		'margin'     => 40,
@@ -52,7 +49,7 @@ class Kama_Contents {
 		'tomenu_simcount' => 800,
 	);
 
-	public $contents; // collect html contents
+	public $contents; // collect html (contents)
 
 	private $temp;
 
@@ -79,10 +76,10 @@ class Kama_Contents {
 	}
 
 	/**
-	 * Обрабатывает текст, превращает шоткод в нем в оглавление.
-	 * @param (string) $content текст, в котором есть шоткод.
-	 * @param (string) $contents_cb callback функция, которая обработает список оглавления.
-	 * @return Обработанный текст с оглавлением, если в нем есть шоткод.
+	 * Processes the text, turns the shortcode in it into a table of contents.
+	 * @param (string) $content      The text, which has a shortcode.
+	 * @param (string) $contents_cb  Сallback function that will process the contents list.
+	 * @return (string) Processed text with a table of contents, if it has a shotcode.
 	 */
 	function shortcode( $content, $contents_cb = '' ){
 		if( false === strpos( $content, '['. $this->opt->shortcode ) )
@@ -101,13 +98,13 @@ class Kama_Contents {
 	}
 
 	/**
-	 * Заменяет заголовки в переданном тексте (по ссылке), создает и возвращает оглавление.
-	 * @param (string)        $content текст на основе которого нужно создать оглавление.
-	 * @param (array/string)  $tags    массив тегов, которые искать в переданном тексте.
-	 *                                 Можно указать: имена тегов "h2 h3" или классы элементов ".foo .foo2".
-	 *                                 Если в теги добавить маркер "embed" то вернется только тег <ul>
-	 *                                 без заголовка и оборачивающего блока. Нужно для использования внутри текста, как список.
-	 * @return                html код оглавления.
+	 * Replaces the headings in the passed text (by ref), creates and returns a table of contents.
+	 * @param (string)        $content The text from which you want to create a table of contents.
+	 * @param (array/string)  $tags    Array of HTML tags to look for in the passed text.
+	 *                                 You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
+	 *                                 You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
+	 *                                 It can be useful for use contents inside the text as a list.
+	 * @return                HTML code of contents.
 	 */
 	function make_contents( & $content, $tags = '' ){
 		// return if text is too short
