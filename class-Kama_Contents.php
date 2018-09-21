@@ -356,5 +356,6 @@ class Kama_Contents {
 	function strip_shortcode( $text ){
 		return preg_replace('~\['. $this->opt->shortcode .'[^\]]*\]~', '', $text );
 	}
+	
 }
 
