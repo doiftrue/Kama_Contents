@@ -5,7 +5,7 @@
  *
  * @author: Kama
  * @info: http://wp-kama.ru/?p=1513
- * @version: 3.15
+ * @version: 3.2
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
 class Kama_Contents {
@@ -118,26 +118,42 @@ class Kama_Contents {
 		if( ! $tags )
 			$tags = $this->opt->selectors;
 
-		if( is_string($tags) )
-			$tags = array_map('trim', preg_split('/[ ,]+/', $tags ) );
+		if( is_string($tags) ){
+			$extra_tags = array();
+			if( preg_match( '/(as_table)="([^"]+)"/', $tags, $mm ) ){
+				$extra_tags[ $mm[1] ] = explode( '|', $mm[2] );
+				$tags = str_replace( " {$mm[0]}", '', $tags ); // cut
+			}
+			$tags  = array_map( 'trim', preg_split('/[ ,]+/', $tags ) );
+			$tags += $extra_tags;
+		}
 
-		$tags = array_filter($tags); // del empty
+		$tags = array_filter( $tags ); // del empty
 
 		// check tags
-		foreach( $tags as $k => $tag ){
+		foreach( $tags as $key => $tag ){
+
+			// extra tags
+			if( in_array( $key, array('as_table') ) ){
+				$this->temp->as_table = $tag;
+
+				unset( $tags[ $key ] );
+				continue;
+			}
+
 			// remove special marker tags and set $args
 			if( in_array( $tag, array('embed','no_to_menu') ) ){
-				if( $tag == 'embed' ) $this->temp->embed = true;
+				if( $tag == 'embed' )      $this->temp->embed = true;
 				if( $tag == 'no_to_menu' ) $this->opt->to_menu = false;
 
-				unset( $tags[ $k ] );
+				unset( $tags[ $key ] );
 				continue;
 			}
 
 			// remove tag if it's not exists in content
 			$patt = ( ($tag[0] == '.') ? 'class=[\'"][^\'"]*'. substr($tag, 1) : "<$tag" );
 			if( ! preg_match("/$patt/i", $content ) ){
-				unset( $tags[ $k ] );
+				unset( $tags[ $key ] );
 				continue;
 			}
 		}
@@ -191,17 +207,36 @@ class Kama_Contents {
 		// markup
 		$ItemList = $this->opt->markup ? ' itemscope itemtype="http://schema.org/ItemList"' : '';
 
+		if( isset($this->temp->as_table) ){
+			$contents = '
+			<table class="contents" id="kcmenu"'. ($ItemList ?: '') .'>
+				<thead>
+					<tr>
+						<th>'. esc_html( $this->temp->as_table[0] ) .'</th>
+						<th>'. esc_html( $this->temp->as_table[1] ) .'</th>
+					</tr>
+				</thead>
+				<tbody>
+					'. implode('', $this->contents ) .'
+				</tbody>
+			</table>';
+		}
+		else {
+			$contents =
+				( $_is_tit ? '<div class="kc__wrap"'. $ItemList .' >' : '' ) .
+				( $_is_tit ? '<span style="display:block;" class="kc-title kc__title" id="kcmenu"'. ($ItemList?' itemprop="name"':'') .'>'. $_tit .'</span>'. "\n" : '' ) .
+					'<ul class="contents"'. ( (! $_tit || $embed) ? ' id="kcmenu"' : '' ) . ( ($ItemList && ! $_is_tit ) ? $ItemList : '' ) .'>'. "\n".
+						implode('', $this->contents ) .
+					'</ul>'."\n" .
+				( $_is_tit ? '</div>' : '' );
+		}
+
 		$contents =
 			( ( ! $css && $this->opt->css ) ? '<style>'. preg_replace('/[\n\t ]+/', ' ', $this->opt->css ) .'</style>' : '' ) .
-			( $_is_tit ? '<div class="kc__wrap"'. $ItemList .' >' : '' ) .
-			( $_is_tit ? '<span style="display:block;" class="kc-title kc__title" id="kcmenu"'. ($ItemList?' itemprop="name"':'') .'>'. $_tit .'</span>'. "\n" : '' ) .
-				'<ul class="contents"'. ( (! $_tit || $embed) ? ' id="kcmenu"' : '' ) . ( ($ItemList && ! $_is_tit ) ? $ItemList : '' ) .'>'. "\n".
-					implode('', $this->contents ) .
-				'</ul>'."\n" .
-			( $_is_tit ? '</div>' : '' ) .
+			$contents .
 			( ( ! $js && $this->opt->js ) ? '<script>'. preg_replace('/[\n\t ]+/', ' ', $this->opt->js ) .'</script>' : '' ) ;
 
-		unset($this->temp); // clear cache
+		unset( $this->temp ); // clear cache
 
 		return $this->contents = $contents;
 	}
@@ -235,6 +270,14 @@ class Kama_Contents {
 			$level_tag = $match[6]; // class_name
 		}
 
+		if( isset($this->temp->as_table) ){
+			$tag_desc = '';
+			//if( preg_match( '/'. preg_quote($match[0], '/') .'\s*<p>((?:.(?!<\/p>))+)./', $this->temp->content, $mm ) ){
+			if( preg_match( '/'. preg_quote($match[0], '/') .'\s*<p>(.+?)<\/p>/', $this->temp->content, $mm ) ){
+				$tag_desc = $mm[1];
+			}
+		}
+
 		$opt = $this->opt; // short love
 
 		// if tag contains id attribute it become anchor
@@ -263,13 +306,27 @@ class Kama_Contents {
 		if( false !== strpos($cont_elem_txt, '</a>') ) $cont_elem_txt = preg_replace('~<a[^>]+>|</a>~', '', $cont_elem_txt );
 		if( false !== strpos($cont_elem_txt, '<img') ) $cont_elem_txt = preg_replace('~<img[^>]+>~', '', $cont_elem_txt );
 
-		$this->contents[] = "\t".
-			'<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
-				<a rel="nofollow"'. ($_is_mark?' itemprop="item"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
-					'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
-				</a>
-				'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
-			</li>'. "\n";
+		if( isset($this->temp->as_table) ){
+			$this->contents[] = "\t".
+				'<tr>
+					<td '. ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
+						<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
+							'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
+						</a>
+						'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
+					</td>
+					<td>'. $tag_desc .'</td>
+				</tr>'. "\n";
+		}
+		else {
+			$this->contents[] = "\t".
+				'<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
+					<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
+						'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
+					</a>
+					'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
+				</li>'. "\n";
+		}
 
 		if( $opt->anchor_link )
 			$tag_txt = '<a rel="nofollow" class="kc__anchlink" href="#'. $anchor .'">'. $opt->anchor_link .'</a> ' . $tag_txt;
@@ -356,6 +413,7 @@ class Kama_Contents {
 	function strip_shortcode( $text ){
 		return preg_replace('~\['. $this->opt->shortcode .'[^\]]*\]~', '', $text );
 	}
-	
+
 }
+
 
