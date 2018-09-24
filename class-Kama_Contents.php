@@ -5,7 +5,7 @@
  *
  * @author: Kama
  * @info: http://wp-kama.ru/?p=1513
- * @version: 3.2
+ * @version: 3.2.1
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
 class Kama_Contents {
@@ -134,7 +134,7 @@ class Kama_Contents {
 		foreach( $tags as $key => $tag ){
 
 			// extra tags
-			if( in_array( $key, array('as_table') ) ){
+			if( in_array( $key, array('as_table'), true ) ){
 				$this->temp->as_table = $tag;
 
 				unset( $tags[ $key ] );
@@ -415,5 +415,6 @@ class Kama_Contents {
 	}
 
 }
+
 
 
