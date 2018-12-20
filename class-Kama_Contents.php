@@ -1,21 +1,20 @@
-<?php
-
 /**
  * Содержание (оглавление) для больших постов.
  *
- * @author: Kama
- * @info: http://wp-kama.ru/?p=1513
+ * @author:  Kama
+ * @info:    http://wp-kama.ru/?p=1513
  * @version: 3.2.1
+ *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
 class Kama_Contents {
 
-	public $opt = array(
+	public $opt = [
 		// Отступ слева у подразделов в px.
 		'margin'     => 40,
 		// Теги по умолчанию по котором будет строиться оглавление. Порядок имеет значение.
 		// Кроме тегов, можно указать атрибут classа: array('h2','.class_name'). Можно указать строкой: 'h2 h3 .class_name'
-		'selectors'  => array('h2','h3','h4'),
+		'selectors'  => [ 'h2','h3','h4' ],
 		// Ссылка на возврат к оглавлению. '' - убрать ссылку
 		'to_menu'    => 'к содержанию ↑',
 		// Заголовок. '' - убрать заголовок
@@ -48,7 +47,7 @@ class Kama_Contents {
 		// Не имеет смысла, если параметр 'to_menu' отключен. С целью производительности, кириллица считается без учета кодировки.
 		// Поэтому 800 символов кириллицы - это примерно 1600 символов в этом параметре. 800 - расчет для сайтов на кириллице...
 		'tomenu_simcount' => 800,
-	);
+	];
 
 	public $contents; // collect html (contents)
 
@@ -62,8 +61,9 @@ class Kama_Contents {
 	}
 
 	/**
-	 * Create instance
-	 * @param  array [$args = array()] Options
+	 * Create instance.
+	 *
+	 * @param  array $args Options
 	 * @return object Instance
 	 */
 	static function init( $args = array() ){
@@ -78,9 +78,11 @@ class Kama_Contents {
 
 	/**
 	 * Processes the text, turns the shortcode in it into a table of contents.
-	 * @param (string) $content      The text, which has a shortcode.
-	 * @param (string) $contents_cb  Сallback function that will process the contents list.
-	 * @return (string) Processed text with a table of contents, if it has a shotcode.
+	 *
+	 * @param string $content      The text, which has a shortcode.
+	 * @param string $contents_cb  Сallback function that will process the contents list.
+	 *
+	 * @return string Processed text with a table of contents, if it has a shotcode.
 	 */
 	function shortcode( $content, $contents_cb = '' ){
 		if( false === strpos( $content, '['. $this->opt->shortcode ) )
@@ -100,12 +102,14 @@ class Kama_Contents {
 
 	/**
 	 * Replaces the headings in the passed text (by ref), creates and returns a table of contents.
-	 * @param (string)        $content The text from which you want to create a table of contents.
-	 * @param (array/string)  $tags    Array of HTML tags to look for in the passed text.
-	 *                                 You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
-	 *                                 You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
-	 *                                 It can be useful for use contents inside the text as a list.
-	 * @return                HTML code of contents.
+	 *
+	 * @param string        $content The text from which you want to create a table of contents.
+	 * @param array|string  $tags    Array of HTML tags to look for in the passed text.
+	 *                               You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
+	 *                               You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
+	 *                               It can be useful for use contents inside the text as a list.
+	 *
+	 * @return string HTML code of contents.
 	 */
 	function make_contents( & $content, $tags = '' ){
 		// return if text is too short
@@ -415,6 +419,3 @@ class Kama_Contents {
 	}
 
 }
-
-
-
