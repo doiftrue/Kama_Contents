@@ -116,7 +116,7 @@ class Kama_Contents {
 	function make_contents( & $content, $tags = '' ){
 		// return if text is too short
 		if( mb_strlen( strip_tags($content) ) < $this->opt->min_length )
-			return;
+			return '';
 
 		$this->temp     = $this->opt;
 		$this->contents = array();
@@ -164,7 +164,8 @@ class Kama_Contents {
 			}
 		}
 
-		if( ! $tags ) return;
+		if( ! $tags )
+			return '';
 
 		// set patterns from given $tags
 		// separate classes & tags & set
@@ -199,7 +200,7 @@ class Kama_Contents {
 
 		if( ! $count || $count < $this->opt->min_found ){
 			unset($this->temp); // clear cache
-			return;
+			return '';
 		}
 
 		$this->temp->content = $content = $_content; // $_content was for check reasone
@@ -231,9 +232,9 @@ class Kama_Contents {
 			$contents =
 				( $_is_tit ? '<div class="kc__wrap"'. $ItemList .' >' : '' ) .
 				( $_is_tit ? '<span style="display:block;" class="kc-title kc__title" id="kcmenu"'. ($ItemList?' itemprop="name"':'') .'>'. $_tit .'</span>'. "\n" : '' ) .
-					'<ul class="contents"'. ( (! $_tit || $embed) ? ' id="kcmenu"' : '' ) . ( ($ItemList && ! $_is_tit ) ? $ItemList : '' ) .'>'. "\n".
-						implode('', $this->contents ) .
-					'</ul>'."\n" .
+				'<ul class="contents"'. ( (! $_tit || $embed) ? ' id="kcmenu"' : '' ) . ( ($ItemList && ! $_is_tit ) ? $ItemList : '' ) .'>'. "\n".
+				implode('', $this->contents ) .
+				'</ul>'."\n" .
 				( $_is_tit ? '</div>' : '' );
 		}
 
@@ -314,7 +315,7 @@ class Kama_Contents {
 
 		if( isset($this->temp->as_table) ){
 			$this->contents[] = "\t".
-				'<tr>
+			                    '<tr>
 					<td '. ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
 						<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
 							'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
@@ -326,7 +327,7 @@ class Kama_Contents {
 		}
 		else {
 			$this->contents[] = "\t".
-				'<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
+			                    '<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
 					<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
 						'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
 					</a>
