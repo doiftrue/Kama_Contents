@@ -5,7 +5,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 3.2.1
+ * @version: 3.17
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
