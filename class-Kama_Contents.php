@@ -314,8 +314,8 @@ class Kama_Contents {
 		if( false !== strpos($cont_elem_txt, '<img') ) $cont_elem_txt = preg_replace('~<img[^>]+>~', '', $cont_elem_txt );
 
 		if( isset($this->temp->as_table) ){
-			$this->contents[] = "\t".
-			                    '<tr>
+			$this->contents[] = "\t".'
+				<tr>
 					<td '. ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
 						<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
 							'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
@@ -326,8 +326,8 @@ class Kama_Contents {
 				</tr>'. "\n";
 		}
 		else {
-			$this->contents[] = "\t".
-			                    '<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
+			$this->contents[] = "\t".'
+				<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"':'') .'>
 					<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
 						'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
 					</a>
@@ -422,3 +422,4 @@ class Kama_Contents {
 	}
 
 }
+
