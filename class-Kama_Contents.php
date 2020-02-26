@@ -1,11 +1,12 @@
 <?php
 
+
 /**
  * Содержание (оглавление) для больших постов.
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 3.17
+ * @version: 3.18
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -370,7 +371,9 @@ class Kama_Contents {
 	function _sanitaze_anchor( $anch ){
 		$anch = strip_tags( $anch );
 
-		$iso9 = array(
+		$anch = apply_filters( 'kama_cont::sanitaze_anchor_before', $anch, $this );
+
+		$iso9 = [
 			'А'=>'A', 'Б'=>'B', 'В'=>'V', 'Г'=>'G', 'Д'=>'D', 'Е'=>'E', 'Ё'=>'YO', 'Ж'=>'ZH',
 			'З'=>'Z', 'И'=>'I', 'Й'=>'J', 'К'=>'K', 'Л'=>'L', 'М'=>'M', 'Н'=>'N', 'О'=>'O',
 			'П'=>'P', 'Р'=>'R', 'С'=>'S', 'Т'=>'T', 'У'=>'U', 'Ф'=>'F', 'Х'=>'H', 'Ц'=>'TS',
@@ -383,35 +386,36 @@ class Kama_Contents {
 			// other
 			'Ѓ'=>'G', 'Ґ'=>'G', 'Є'=>'YE', 'Ѕ'=>'Z', 'Ј'=>'J', 'І'=>'I', 'Ї'=>'YI', 'Ќ'=>'K', 'Љ'=>'L', 'Њ'=>'N', 'Ў'=>'U', 'Џ'=>'DH',
 			'ѓ'=>'g', 'ґ'=>'g', 'є'=>'ye', 'ѕ'=>'z', 'ј'=>'j', 'і'=>'i', 'ї'=>'yi', 'ќ'=>'k', 'љ'=>'l', 'њ'=>'n', 'ў'=>'u', 'џ'=>'dh'
-		);
+		];
 
 		$anch = strtr( $anch, $iso9 );
 
 		$spec = preg_quote( $this->opt->spec );
-		$anch = preg_replace("/[^a-zA-Z0-9_$spec\-]+/", '-', $anch ); // все ненужное на '-'
+		$anch = preg_replace( "/[^a-zA-Z0-9_$spec\-]+/", '-', $anch ); // все ненужное на '-'
 		$anch = strtolower( trim( $anch, '-') );
 		$anch = substr( $anch, 0, 70 ); // shorten
-		$anch = $this->_unique_anchor( $anch );
+
+		$anch = apply_filters( 'kama_cont::sanitaze_anchor', $anch, $this );
+
+		$anch = self::_unique_anchor( $anch );
 
 		return $anch;
 	}
 
 	## adds number at the end if this anchor already exists
-	function _unique_anchor( $anch ){
-		$temp = & $this->temp;
+	static function _unique_anchor( $anch ){
+		static $anchors = [];
 
 		// check and unique anchor
-		if( empty($temp->anchors) ){
-			$temp->anchors = array( $anch => 1 );
-		}
-		elseif( isset($temp->anchors[ $anch ]) ){
+		if( isset($anchors[ $anch ]) ){
+
 			$lastnum = substr( $anch, -1 );
 			$lastnum = is_numeric($lastnum) ? $lastnum + 1 : 2;
-			return $this->_unique_anchor( "$anch-$lastnum" );
+
+			return self::_unique_anchor( "$anch-$lastnum" );
 		}
-		else {
-			$temp->anchors[ $anch ] = 1;
-		}
+		else
+			$anchors[ $anch ] = 1;
 
 		return $anch;
 	}
