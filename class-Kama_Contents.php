@@ -6,7 +6,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 3.18
+ * @version: 3.19
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -81,6 +81,7 @@ class Kama_Contents {
 
 	/**
 	 * Processes the text, turns the shortcode in it into a table of contents.
+	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
 	 *
 	 * @param string $content      The text, which has a shortcode.
 	 * @param string $contents_cb  Сallback function that will process the contents list.
@@ -88,11 +89,20 @@ class Kama_Contents {
 	 * @return string Processed text with a table of contents, if it has a shotcode.
 	 */
 	function shortcode( $content, $contents_cb = '' ){
-		if( false === strpos( $content, '['. $this->opt->shortcode ) )
+
+		$shortcode = $this->opt->shortcode;
+
+		if( false === strpos( $content, "[$shortcode" ) )
 			return $content;
 
+
+		if( false !== strpos( $content, "[[$shortcode" ) ){
+			$uniqid = uniqid();
+			$content = str_replace( "[[$shortcode", "[[$uniqid", $content );
+		}
+
 		// get contents data
-		if( ! preg_match('~^(.*)\['. $this->opt->shortcode .'([^\]]*)\](.*)$~s', $content, $m ) )
+		if( ! preg_match( "~^(.*)\[$shortcode([^\]]*)\](.*)$~su", $content, $m ) )
 			return $content;
 
 		$contents = $this->make_contents( $m[3], $m[2] );
@@ -100,7 +110,12 @@ class Kama_Contents {
 		if( $contents && $contents_cb && is_callable($contents_cb) )
 			$contents = $contents_cb( $contents );
 
-		return $m[1] . $contents . $m[3];
+		$content = $m[1] . $contents . $m[3];
+
+		if( isset($uniqid) )
+			$content = preg_replace( "/\[\[$uniqid([^\]]*)\]\]?/", "[$shortcode\\1]", $content );
+
+		return $content;
 	}
 
 	/**
@@ -125,6 +140,7 @@ class Kama_Contents {
 		if( ! $tags )
 			$tags = $this->opt->selectors;
 
+		// for shortcode
 		if( is_string($tags) ){
 			$extra_tags = array();
 			if( preg_match( '/(as_table)="([^"]+)"/', $tags, $mm ) ){
