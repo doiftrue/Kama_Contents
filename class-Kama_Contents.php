@@ -189,13 +189,14 @@ class Kama_Contents {
 		$class_patt = $tag_patt = $level_tags = array();
 		foreach( $tags as $tag ){
 			// class
-			if( $tag{0} == '.' ){
+			if( '.' === $tag[0] ){
 				$tag  = substr( $tag, 1 );
 				$link = & $class_patt;
 			}
 			// html tag
-			else
+			else {
 				$link = & $tag_patt;
+			}
 
 			$link[] = $tag;
 			$level_tags[] = $tag;
