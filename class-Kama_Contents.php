@@ -6,7 +6,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 3.19
+ * @version: 3.20
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -189,14 +189,13 @@ class Kama_Contents {
 		$class_patt = $tag_patt = $level_tags = array();
 		foreach( $tags as $tag ){
 			// class
-			if( '.' === $tag[0] ){
+			if( $tag{0} == '.' ){
 				$tag  = substr( $tag, 1 );
 				$link = & $class_patt;
 			}
 			// html tag
-			else {
+			else
 				$link = & $tag_patt;
-			}
 
 			$link[] = $tag;
 			$level_tags[] = $tag;
@@ -390,7 +389,10 @@ class Kama_Contents {
 
 		$anch = apply_filters( 'kama_cont::sanitaze_anchor_before', $anch, $this );
 
-		$iso9 = [
+		$anch = html_entity_decode( $anch );
+
+		// iso9
+		$anch = strtr( $anch, [
 			'А'=>'A', 'Б'=>'B', 'В'=>'V', 'Г'=>'G', 'Д'=>'D', 'Е'=>'E', 'Ё'=>'YO', 'Ж'=>'ZH',
 			'З'=>'Z', 'И'=>'I', 'Й'=>'J', 'К'=>'K', 'Л'=>'L', 'М'=>'M', 'Н'=>'N', 'О'=>'O',
 			'П'=>'P', 'Р'=>'R', 'С'=>'S', 'Т'=>'T', 'У'=>'U', 'Ф'=>'F', 'Х'=>'H', 'Ц'=>'TS',
@@ -403,9 +405,7 @@ class Kama_Contents {
 			// other
 			'Ѓ'=>'G', 'Ґ'=>'G', 'Є'=>'YE', 'Ѕ'=>'Z', 'Ј'=>'J', 'І'=>'I', 'Ї'=>'YI', 'Ќ'=>'K', 'Љ'=>'L', 'Њ'=>'N', 'Ў'=>'U', 'Џ'=>'DH',
 			'ѓ'=>'g', 'ґ'=>'g', 'є'=>'ye', 'ѕ'=>'z', 'ј'=>'j', 'і'=>'i', 'ї'=>'yi', 'ќ'=>'k', 'љ'=>'l', 'њ'=>'n', 'ў'=>'u', 'џ'=>'dh'
-		];
-
-		$anch = strtr( $anch, $iso9 );
+		] );
 
 		$spec = preg_quote( $this->opt->spec );
 		$anch = preg_replace( "/[^a-zA-Z0-9_$spec\-]+/", '-', $anch ); // все ненужное на '-'
@@ -443,4 +443,5 @@ class Kama_Contents {
 	}
 
 }
+
 
