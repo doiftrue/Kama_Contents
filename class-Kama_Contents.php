@@ -6,7 +6,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 3.20
+ * @version: 3.21
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -189,7 +189,7 @@ class Kama_Contents {
 		$class_patt = $tag_patt = $level_tags = array();
 		foreach( $tags as $tag ){
 			// class
-			if( $tag{0} == '.' ){
+			if( $tag[0] == '.' ){
 				$tag  = substr( $tag, 1 );
 				$link = & $class_patt;
 			}
