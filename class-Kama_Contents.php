@@ -13,8 +13,8 @@ class Kama_Contents {
 
 	public $opt = [
 
-		// Отступ слева у подразделов в px.
-		'margin'     => 40,
+		// Отступ слева у подразделов в px|em|rem.
+		'margin'     => '2em',
 		// Теги по умолчанию по котором будет строиться оглавление. Порядок имеет значение.
 		// Кроме тегов, можно указать атрибут classа: array('h2','.class_name'). Можно указать строкой: 'h2 h3 .class_name'
 		'selectors'  => [ 'h2','h3','h4' ],
@@ -360,10 +360,11 @@ class Kama_Contents {
 
 		$level = @ $temp->level_tags[ $level_tag ];
 		if( $level > 0 ){
-			$sub = ( $opt->margin ? ' style="margin-left:' . ( $level * $opt->margin ) . 'px;"' : '' ) . ' class="kamatoc-sub kamatoc-sub-' . $level . '"';
+			$unit = preg_replace( '/\d/', '', $opt->margin ) ?: 'px';
+			$sub = ( $opt->margin ? ' class="kamatoc__sub kamatoc__sub_' . $level . '" style="margin-left:' . ( $level * (int) $opt->margin ) . $unit .';"' : '' );
 		}
 		else{
-			$sub = ' class="kamatoc-top"';
+			$sub = ' class="kamatoc__top"';
 		}
 
 		// collect contents
