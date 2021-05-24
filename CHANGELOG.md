@@ -7,9 +7,9 @@
 	kc__wrap     → kamatoc-wrap
 	kc__title    → kamatoc-wrap__title
 	contents     → kamatoc
-	top          → kamatoc-top
-	sub          → kamatoc-sub
-	sub_N        → kamatoc-sub-N
+	top          → kamatoc__top
+	sub          → kamatoc__sub
+	sub_N        → kamatoc__sub_N
 	kc__anchor   → kamatoc-anchor
 	kc-gotop     → kamatoc-gotop
 	kc__anchlink → kamatoc-anchlink
