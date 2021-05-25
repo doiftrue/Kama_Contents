@@ -5,7 +5,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.0
+ * @version: 4.1
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -245,7 +245,7 @@ class Kama_Contents {
 		if( isset( $this->temp->as_table ) ){
 
 			$contents = '
-			<table class="kamatoc" id="kcmenu"'. ( $ItemList ?: '' ) .'>
+			<table class="kamatoc" id="tocmenu"'. ( $ItemList ?: '' ) .'>
 				<thead>
 					<tr>
 						<th>'. esc_html( $this->temp->as_table[0] ) .'</th>
@@ -271,7 +271,7 @@ class Kama_Contents {
 				$contents_wrap_patt = '%s';
 			}
 
-			$contents = sprintf( '<ul class="kamatoc" id="kcmenu"%s>%s</ul>',
+			$contents = sprintf( '<ul class="kamatoc" id="tocmenu"%s>%s</ul>',
 				( $ItemList && ! $_is_tit ? $ItemList : '' ),
 				implode( '', $this->contents )
 			);
@@ -416,7 +416,7 @@ class Kama_Contents {
 		$to_menu = '';
 		if( $opt->to_menu ){
 			// go to contents
-			$to_menu = '<a rel="nofollow" class="kamatoc-gotop" href="'. $opt->page_url .'#kcmenu">'. $opt->to_menu .'</a>';
+			$to_menu = '<a rel="nofollow" class="kamatoc-gotop" href="'. $opt->page_url .'#tocmenu">'. $opt->to_menu .'</a>';
 
 			// remove '$to_menu' if simbols beatween $to_menu too small (< 300)
 			// mb_strpos( $temp->content, $match[0] ) - в 150 раз медленнее!
