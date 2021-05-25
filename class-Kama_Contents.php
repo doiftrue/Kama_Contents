@@ -224,6 +224,8 @@ class Kama_Contents {
 
 		$this->temp->content = $content;
 
+		$this->opt->toc_page_url = $this->opt->page_url ?: home_url( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
+
 		// collect and replace
 		$_content = preg_replace_callback( "/$patt_in/is", [ $this, '_make_contents_callback' ], $content, -1, $count );
 
@@ -236,16 +238,18 @@ class Kama_Contents {
 
 		// html
 		$embed = isset( $this->temp->embed );
-		$_tit = & $this->opt->title;
-		$_is_tit = ! $embed && $_tit;
+		$title = & $this->opt->title;
+		$is_title = ! $embed && $title;
 
 		// markup
 		$ItemList = $this->opt->markup ? ' itemscope itemtype="https://schema.org/ItemList"' : '';
+		$ItemName = $this->opt->markup ? '<meta itemprop="name" content="'. wp_strip_all_tags( $title ) .'" />' : '';
 
 		if( isset( $this->temp->as_table ) ){
 
 			$contents = '
-			<table class="kamatoc" id="tocmenu"'. ( $ItemList ?: '' ) .'>
+			<table class="kamatoc" id="tocmenu"'. $ItemList .'>
+				'. $ItemName .'
 				<thead>
 					<tr>
 						<th>'. esc_html( $this->temp->as_table[0] ) .'</th>
@@ -259,10 +263,10 @@ class Kama_Contents {
 		}
 		else {
 
-			if( $_is_tit ){
+			if( $is_title ){
 				$contents_wrap_patt = '
-					<div class="kamatoc-wrap"' . $ItemList . ' >
-						<span class="kamatoc-wrap__title"' . ( $ItemList ? ' itemprop="name"' : '' ) . '>' . $_tit . '</span>
+					<div class="kamatoc-wrap">
+						<span class="kamatoc-wrap__title">' . $title . '</span>
 						%s
 					</div>
 				';
@@ -271,10 +275,11 @@ class Kama_Contents {
 				$contents_wrap_patt = '%s';
 			}
 
-			$contents = sprintf( '<ul class="kamatoc" id="tocmenu"%s>%s</ul>',
-				( $ItemList && ! $_is_tit ? $ItemList : '' ),
-				implode( '', $this->contents )
-			);
+			$contents = '
+				<ul class="kamatoc" id="tocmenu" '. $ItemList .'>
+					'. $ItemName .'
+					'. implode( '', $this->contents ) .'
+				</ul>';
 
 			$contents = sprintf( $contents_wrap_patt, $contents );
 		}
@@ -383,23 +388,25 @@ class Kama_Contents {
 		}
 
 		if( isset( $this->temp->as_table ) ){
+
 			$this->contents[] = "\t".'
 				<tr>
-					<td '. ($_is_mark?' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"':'') .'>
-						<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
-							'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
-						</a>
+					<td'. ( $_is_mark ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '' ) .'>
+						<a rel="nofollow" href="'. "$opt->page_url#$anchor" .'">'. $cont_elem_txt .'</a>
+						'.( $_is_mark ? ' <meta itemprop="name" content="'. $cont_elem_txt .'" />':'' ).'
+						'.( $_is_mark ? ' <meta itemprop="url" content="'. "$opt->toc_page_url#$anchor" .'" />':'' ).'
 						'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
 					</td>
 					<td>'. $tag_desc .'</td>
 				</tr>'. "\n";
 		}
 		else {
+
 			$this->contents[] = "\t".'
-				<li'. $sub . ($_is_mark?' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"':'') .'>
-					<a rel="nofollow"'. ($_is_mark?' itemprop="url"':'') .' href="'. $opt->page_url .'#'. $anchor .'">
-						'.( $_is_mark ? '<span itemprop="name">'. $cont_elem_txt .'</span>' : $cont_elem_txt ).'
-					</a>
+				<li'. $sub . ( $_is_mark ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '' ) .'>
+					<a rel="nofollow" href="'. $opt->page_url .'#'. $anchor .'">'. $cont_elem_txt .'</a>
+					'.( $_is_mark ? ' <meta itemprop="name" content="'. $cont_elem_txt .'" />':'' ).'
+					'.( $_is_mark ? ' <meta itemprop="url" content="'. "$opt->toc_page_url#$anchor" .'" />':'' ).'
 					'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
 				</li>'. "\n";
 		}
