@@ -5,7 +5,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.1
+ * @version: 4.2
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -23,9 +23,12 @@ class Kama_Contents {
 		// Заголовок. '' - убрать заголовок
 		'title'      => 'Оглавление:',
 		// Css стили. '' - убрать стили
-		'css'        => '.kamatoc-gotop{ display:block; text-align:right; }
-						 .kamatoc-wrap__title{ display:block; font-style:italic; padding:1em 0; }
-						 .kamatoc-anchlink{ color:#ddd!important; position:absolute; margin-left:-1em; }',
+		'css'        => '
+			.kamatoc-wrap{ clear:both; }
+			.kamatoc-wrap__title{ display:block; font-style:italic; padding:1em 0; }
+			.kamatoc-gotop{ display:block; text-align:right; }
+			.kamatoc-anchlink{ color:#ddd!important; position:absolute; margin-left:-1em; }
+		',
 		// JS код (добавляется после HTML кода)
 		'js'  => '',
 		// Минимальное количество найденных тегов, чтобы оглавление выводилось.
