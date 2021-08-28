@@ -6,6 +6,7 @@
 4.0 (24-05-2021)
 	- Refactoring. CSS class names were changed to BEM, so you need change your styles to update the code (no legacy saved, sorry). 
 	- Changed CSS classes list:
+	
 	```
 	kc__wrap     → kamatoc-wrap
 	kc__title    → kamatoc-wrap__title
