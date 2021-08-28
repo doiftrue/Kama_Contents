@@ -5,20 +5,18 @@
 
 4.0 (24-05-2021)
 	- Refactoring. CSS class names were changed to BEM, so you need change your styles to update the code (no legacy saved, sorry). 
-
 	- Changed CSS classes list:
-	
-		```
-		kc__wrap     → kamatoc-wrap
-		kc__title    → kamatoc-wrap__title
-		contents     → kamatoc
-		top          → kamatoc__top
-		sub          → kamatoc__sub
-		sub_N        → kamatoc__sub_N
-		kc__anchor   → kamatoc-anchor
-		kc-gotop     → kamatoc-gotop
-		kc__anchlink → kamatoc-anchlink
-		```
+	```
+	kc__wrap     → kamatoc-wrap
+	kc__title    → kamatoc-wrap__title
+	contents     → kamatoc
+	top          → kamatoc__top
+	sub          → kamatoc__sub
+	sub_N        → kamatoc__sub_N
+	kc__anchor   → kamatoc-anchor
+	kc-gotop     → kamatoc-gotop
+	kc__anchlink → kamatoc-anchlink
+	```
 	
 
 3.20 (26-08-2020)
