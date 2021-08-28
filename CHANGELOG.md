@@ -1,4 +1,8 @@
 
+4.2.1 (28-08-2021)
+	Default value for parameter 'spec' was changed from `'.+$*=` to `empty string`.
+
+
 4.0 (24-05-2021)
 	Refactoring. CSS class names were changed to BEM, so you need change your styles to update the code (no legacy saved, sorry). 
 
