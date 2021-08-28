@@ -1,11 +1,10 @@
 <?php
-
 /**
  * Содержание (оглавление) для больших постов.
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.2
+ * @version: 4.2.1
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -39,8 +38,8 @@ class Kama_Contents {
 		'page_url'   => '',
 		// Название шоткода
 		'shortcode'  => 'contents',
-		// Оставлять символы в анкорах
-		'spec'       => '\'.+$*~=',
+		// Оставлять символы в анкорах. For example: '.+$*=
+		'spec'       => '',
 		// Какой тип анкора использовать: 'a' - <a name="anchor"></a> или 'id' -
 		'anchor_type' => 'id',
 		// Название атрибута тега из значения которого будет браться анкор (если этот атрибут есть у тега). Ставим '', чтобы отключить такую проверку...
@@ -516,3 +515,4 @@ class Kama_Contents {
 	}
 
 }
+
