@@ -7,7 +7,6 @@
 	- Refactoring. CSS class names were changed to BEM, so you need change your styles to update the code (no legacy saved, sorry). 
 	- Changed CSS classes list:
 	
-	```
 	kc__wrap     → kamatoc-wrap
 	kc__title    → kamatoc-wrap__title
 	contents     → kamatoc
@@ -17,7 +16,6 @@
 	kc__anchor   → kamatoc-anchor
 	kc-gotop     → kamatoc-gotop
 	kc__anchlink → kamatoc-anchlink
-	```
 	
 
 3.20 (26-08-2020)
