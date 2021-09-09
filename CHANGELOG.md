@@ -1,4 +1,8 @@
 
+4.2.2 (09-09-2021)
+- `meta itemprop="name"` bug esc_attr() added
+- filters prefix changed form `kama_cont::` to `kamatoc__`.
+
 4.2.1 (28-08-2021)
 - Default value for parameter 'spec' was changed from `'.+$*=` to `empty string`.
 
