@@ -4,7 +4,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.2.1
+ * @version: 4.2.2
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -54,10 +54,18 @@ class Kama_Contents {
 		'tomenu_simcount' => 800,
 	];
 
-	public $contents; // collects html (the contents)
+	/**
+	 * Collects html (the contents).
+	 *
+	 * @var
+	 */
+	public $contents;
 
 	private $temp;
 
+	/**
+	 * @var Kama_Contents
+	 */
 	public static $inst;
 
 	public function __construct( $args = array() ){
@@ -68,7 +76,7 @@ class Kama_Contents {
 	 * Create instance.
 	 *
 	 * @param  array $args Options
-	 * @return object Instance
+	 * @return Kama_Contents Instance
 	 */
 	static function init( $args = [] ){
 
@@ -110,9 +118,7 @@ class Kama_Contents {
 		if( $contents && $contents_cb && is_callable( $contents_cb ) )
 			$contents = $contents_cb( $contents );
 
-		$content = $m[1] . $contents . $m[3];
-
-		return $content;
+		return $m[1] . $contents . $m[3];
 	}
 
 	/**
@@ -245,7 +251,7 @@ class Kama_Contents {
 
 		// markup
 		$ItemList = $this->opt->markup ? ' itemscope itemtype="https://schema.org/ItemList"' : '';
-		$ItemName = $this->opt->markup ? '<meta itemprop="name" content="'. wp_strip_all_tags( $title ) .'" />' : '';
+		$ItemName = $this->opt->markup ? '<meta itemprop="name" content="'. esc_attr( wp_strip_all_tags( $title ) ) .'" />' : '';
 
 		if( isset( $this->temp->as_table ) ){
 
@@ -326,17 +332,17 @@ class Kama_Contents {
 
 		// it's only class selector in pattern
 		if( count( $match ) === 5 ){
-			list( $tag, $attrs, $level_tag, $tag_txt ) = array_slice( $match, 1 );
+			[ $tag, $attrs, $level_tag, $tag_txt ] = array_slice( $match, 1 );
 		}
 		// it's found tag selector
 		elseif( count( $match ) === 4 ){
-			list( $tag, $attrs, $tag_txt ) = array_slice( $match, 1 );
+			[ $tag, $attrs, $tag_txt ] = array_slice( $match, 1 );
 
 			$level_tag = $tag; // class name
 		}
 		// it's found class selector
 		else{
-			list( $tag, $attrs, $level_tag, $tag_txt ) = array_slice( $match, 4 );
+			[ $tag, $attrs, $level_tag, $tag_txt ] = array_slice( $match, 4 );
 		}
 
 		if( isset( $this->temp->as_table ) ){
@@ -378,7 +384,7 @@ class Kama_Contents {
 		// markup
 		$_is_mark = $opt->markup;
 
-		$temp->counter = empty($temp->counter) ? 1 : $temp->counter+1;
+		$temp->counter = empty( $temp->counter ) ? 1 : ++$temp->counter;
 
 		// $tag_txt не может содержать A, IMG теги - удалим если надо...
 		$cont_elem_txt = $tag_txt;
@@ -395,8 +401,8 @@ class Kama_Contents {
 				<tr>
 					<td'. ( $_is_mark ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '' ) .'>
 						<a rel="nofollow" href="'. "$opt->page_url#$anchor" .'">'. $cont_elem_txt .'</a>
-						'.( $_is_mark ? ' <meta itemprop="name" content="'. $cont_elem_txt .'" />':'' ).'
-						'.( $_is_mark ? ' <meta itemprop="url" content="'. "$opt->toc_page_url#$anchor" .'" />':'' ).'
+						'.( $_is_mark ? ' <meta itemprop="name" content="'. esc_attr( wp_strip_all_tags( $cont_elem_txt ) ) .'" />':'' ).'
+						'.( $_is_mark ? ' <meta itemprop="url" content="'. esc_attr( "$opt->toc_page_url#$anchor" ) .'" />':'' ).'
 						'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
 					</td>
 					<td>'. $tag_desc .'</td>
@@ -407,8 +413,8 @@ class Kama_Contents {
 			$this->contents[] = "\t".'
 				<li'. $sub . ( $_is_mark ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '' ) .'>
 					<a rel="nofollow" href="'. $opt->page_url .'#'. $anchor .'">'. $cont_elem_txt .'</a>
-					'.( $_is_mark ? ' <meta itemprop="name" content="'. $cont_elem_txt .'" />':'' ).'
-					'.( $_is_mark ? ' <meta itemprop="url" content="'. "$opt->toc_page_url#$anchor" .'" />':'' ).'
+					'.( $_is_mark ? ' <meta itemprop="name" content="'. esc_attr( wp_strip_all_tags( $cont_elem_txt ) ) .'" />':'' ).'
+					'.( $_is_mark ? ' <meta itemprop="url" content="'. esc_attr( "$opt->toc_page_url#$anchor" ) .'" />':'' ).'
 					'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
 				</li>'. "\n";
 		}
@@ -457,7 +463,7 @@ class Kama_Contents {
 	private function _sanitaze_anchor( $anch ){
 		$anch = strip_tags( $anch );
 
-		$anch = apply_filters( 'kama_cont::sanitaze_anchor_before', $anch, $this );
+		$anch = apply_filters( 'kamatoc__sanitaze_anchor_before', $anch, $this );
 
 		$anch = html_entity_decode( $anch );
 
@@ -482,11 +488,9 @@ class Kama_Contents {
 		$anch = strtolower( trim( $anch, '-') );
 		$anch = substr( $anch, 0, 70 ); // shorten
 
-		$anch = apply_filters( 'kama_cont::sanitaze_anchor', $anch, $this );
+		$anch = apply_filters( 'kamatoc__sanitaze_anchor', $anch, $this );
 
-		$anch = self::_unique_anchor( $anch );
-
-		return $anch;
+		return self::_unique_anchor( $anch );
 	}
 
 	/**
