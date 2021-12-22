@@ -4,54 +4,34 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.2.2
+ * @version: 4.3.2
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
 class Kama_Contents {
 
 	public $opt = [
-
-		// Отступ слева у подразделов в px|em|rem.
-		'margin'     => '2em',
-		// Теги по умолчанию по котором будет строиться оглавление. Порядок имеет значение.
-		// Кроме тегов, можно указать атрибут classа: array('h2','.class_name'). Можно указать строкой: 'h2 h3 .class_name'
-		'selectors'  => [ 'h2','h3','h4' ],
-		// Ссылка на возврат к оглавлению. '' - убрать ссылку
-		'to_menu'    => 'к оглавлению ↑',
-		// Заголовок. '' - убрать заголовок
-		'title'      => 'Оглавление:',
-		// Css стили. '' - убрать стили
-		'css'        => '
+		'margin'           => '2em',
+		'selectors'        => [ 'h2', 'h3', 'h4' ],
+		'to_menu'          => 'к оглавлению ↑',
+		'title'            => 'Оглавление:',
+		'css'              => '
 			.kamatoc-wrap{ clear:both; }
 			.kamatoc-wrap__title{ display:block; font-style:italic; padding:1em 0; }
 			.kamatoc-gotop{ display:block; text-align:right; }
 			.kamatoc-anchlink{ color:#ddd!important; position:absolute; margin-left:-1em; }
 		',
-		// JS код (добавляется после HTML кода)
-		'js'  => '',
-		// Минимальное количество найденных тегов, чтобы оглавление выводилось.
-		'min_found'  => 2,
-		// Минимальная длина (символов) текста, чтобы оглавление выводилось.
-		'min_length' => 2000,
-		// Ссылка на страницу для которой собирается оглавление. Если оглавление выводиться на другой странице...
-		'page_url'   => '',
-		// Название шоткода
-		'shortcode'  => 'contents',
-		// Оставлять символы в анкорах. For example: '.+$*=
-		'spec'       => '',
-		// Какой тип анкора использовать: 'a' - <a name="anchor"></a> или 'id' -
-		'anchor_type' => 'id',
-		// Название атрибута тега из значения которого будет браться анкор (если этот атрибут есть у тега). Ставим '', чтобы отключить такую проверку...
+		'js'               => '',
+		'min_found'        => 2,
+		'min_length'       => 2000,
+		'page_url'         => '',
+		'shortcode'        => 'contents',
+		'spec'             => '',
+		'anchor_type'      => 'id',
 		'anchor_attr_name' => 'id',
-		// Включить микроразметку?
-		'markup'      => false,
-		// Добавить 'знак' перед подзаголовком статьи со ссылкой на текущий анкор заголовка. Укажите '#', '&' или что вам нравится :)
-		'anchor_link' => '',
-		// минимальное количество символов между заголовками содержания, для которых нужно выводить ссылку "к содержанию".
-		// Не имеет смысла, если параметр 'to_menu' отключен. С целью производительности, кириллица считается без учета кодировки.
-		// Поэтому 800 символов кириллицы - это примерно 1600 символов в этом параметре. 800 - расчет для сайтов на кириллице...
-		'tomenu_simcount' => 800,
+		'markup'           => false,
+		'anchor_link'      => '',
+		'tomenu_simcount'  => 800,
 	];
 
 	/**
@@ -68,28 +48,71 @@ class Kama_Contents {
 	 */
 	public static $inst;
 
-	public function __construct( $args = array() ){
-		$this->set_opt( $args );
-	}
-
 	/**
 	 * Create instance.
 	 *
-	 * @param  array $args Options
-	 * @return Kama_Contents Instance
+	 * @param array $args {
+	 *     Parameters.
+	 *
+	 *     @type string       $margin            Отступ слева у подразделов в px|em|rem.
+	 *     @type string|array $selectors         HTML теги по котором будет строиться оглавление: 'h2 h3 h4'.
+	 *                                           Порядок определяет уровень вложености.
+	 *                                           Можно указать строку или массив: [ 'h2', 'h3', 'h4' ] или 'h2 h3 h4'.
+	 *                                           Можно указать атрибут class: 'h2 .class_name'.
+	 *                                           Если нужно чтобы разные теги были на одном уровне,
+	 *                                           указываем их через |: 'h2|dt h3' или [ 'h2|dt', 'h3' ].
+	 *     @type string       $to_menu           Ссылка на возврат к оглавлению. '' - убрать ссылку.
+	 *     @type string       $title             Заголовок. '' - убрать заголовок.
+	 *     @type string       $css               Css стили. '' - убрать стили.
+	 *     @type string       $js                JS код (добавляется после HTML кода)
+	 *     @type int          $min_found         Минимальное количество найденных тегов, чтобы оглавление выводилось.
+	 *     @type int          $min_length        Минимальная длина (символов) текста, чтобы оглавление выводилось.
+	 *     @type string       $page_url          Ссылка на страницу для которой собирается оглавление.
+	 *                                           Если оглавление выводиться на другой странице...
+	 *     @type string       $shortcode         Название шоткода.
+	 *     @type string       $spec              Оставлять символы в анкорах. For example: `'.+$*=`.
+	 *     @type string       $anchor_type       Какой тип анкора использовать: 'a' - `<a name="anchor"></a>` или 'id'.
+	 *     @type string       $anchor_attr_name  Название атрибута тега из значения которого будет браться
+	 *                                           анкор (если этот атрибут есть у тега). Ставим '', чтобы отключить такую проверку...
+	 *     @type bool         $markup            Включить микроразметку?
+	 *     @type string       $anchor_link       Добавить 'знак' перед подзаголовком статьи со ссылкой
+	 *                                           на текущий анкор заголовка. Укажите '#', '&' или что вам нравится.
+	 *     @type int          $tomenu_simcount   Минимальное количество символов между заголовками содержания,
+	 *                                           для которых нужно выводить ссылку "к содержанию".
+	 *                                           Не имеет смысла, если параметр 'to_menu' отключен. С целью производительности,
+	 *                                           кириллица считается без учета кодировки. Поэтому 800 символов кириллицы -
+	 *                                           это примерно 1600 символов в этом параметре. 800 - расчет для сайтов на кириллице.
+	 * }
+	 *
+	 * @return Kama_Contents
 	 */
-	static function init( $args = [] ){
+	public static function init( $args = [] ){
 
 		is_null( self::$inst ) && self::$inst = new self( $args );
 
-		if( $args )
-			self::$inst->set_opt( $args );
+		$args && self::$inst->set_opt( $args );
 
 		return self::$inst;
 	}
 
-	public function set_opt( $args = array() ){
+	public function __construct( $args = [] ){
+		$this->set_opt( $args );
+	}
+
+
+	public function set_opt( $args = [] ){
 		$this->opt = (object) array_merge( (array) $this->opt, (array) $args );
+	}
+
+	/**
+	 * Cut the kamaTOC shortcode from the content.
+	 *
+	 * @param string $text
+	 *
+	 * @return string
+	 */
+	public function strip_shortcode( $text ){
+		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $text );
 	}
 
 	/**
@@ -105,18 +128,21 @@ class Kama_Contents {
 
 		$shortcode = $this->opt->shortcode;
 
-		if( false === strpos( $content, "[$shortcode" ) )
+		if( false === strpos( $content, "[$shortcode" ) ){
 			return $content;
+		}
 
 		// get contents data
 		// use `[[contents` to escape the shortcode
-		if( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $m ) )
+		if( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $m ) ){
 			return $content;
+		}
 
 		$contents = $this->make_contents( $m[3], $m[2] );
 
-		if( $contents && $contents_cb && is_callable( $contents_cb ) )
+		if( $contents && $contents_cb && is_callable( $contents_cb ) ){
 			$contents = $contents_cb( $contents );
+		}
 
 		return $m[1] . $contents . $m[3];
 	}
@@ -124,25 +150,29 @@ class Kama_Contents {
 	/**
 	 * Replaces the headings in the passed text (by ref), creates and returns a table of contents.
 	 *
-	 * @param string        $content The text from which you want to create a table of contents.
-	 * @param array|string  $tags    Array of HTML tags to look for in the passed text.
+	 * @param string       $content  The text from which you want to create a table of contents.
+	 * @param array|string $tags     Array of HTML tags to look for in the passed text.
 	 *                               You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
 	 *                               You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
 	 *                               It can be useful for use contents inside the text as a list.
 	 *
 	 * @return string table of contents HTML code.
 	 */
-	public function make_contents( & $content, $tags = '' ){
+	public function make_contents( string & $content, $tags = '' ){
 
 		// text is too short
-		if( mb_strlen( strip_tags($content) ) < $this->opt->min_length )
+		if( mb_strlen( strip_tags( $content ) ) < $this->opt->min_length ){
 			return '';
+		}
 
 		$this->temp = $this->opt;
 		$this->contents = array();
 
-		if( ! $tags )
+		if( ! $tags ){
 			$tags = $this->opt->selectors;
+		}
+
+		$this->temp->original_tags = $tags;
 
 		// for shortcode
 		if( is_string( $tags ) ){
@@ -151,73 +181,108 @@ class Kama_Contents {
 			if( preg_match( '/(as_table)="([^"]+)"/', $tags, $mm ) ){
 
 				$extra_tags[ $mm[1] ] = explode( '|', $mm[2] );
-				$tags = str_replace( " {$mm[0]}", '', $tags ); // cut
+				$tags = str_replace( " $mm[0]", '', $tags ); // cut
 			}
 
-			$tags = array_map( 'trim', preg_split( '/[ ,]+/', $tags ) );
+			$tags = array_map( 'trim', preg_split( '/[ ,|]+/', $tags ) );
 
 			$tags += $extra_tags;
 		}
 
-		$tags = array_filter( $tags ); // del empty
+		$tags = array_filter( $tags );
 
-		// check tags
+		// get parameters from tags
 		foreach( $tags as $key => $tag ){
 
 			// extra tags
-			if( $key === 'as_table' ){
+			if( 'as_table' === $key ){
 				$this->temp->as_table = $tag;
 
 				unset( $tags[ $key ] );
-				continue;
 			}
-
-			// remove special marker tags and set $args
-			if( in_array( $tag, [ 'embed', 'no_to_menu' ] ) ){
-
-				if( $tag === 'embed' )
-					$this->temp->embed = true;
-
-				if( $tag === 'no_to_menu' )
-					$this->opt->to_menu = false;
+			elseif( 'embed' === $tag ){
+				$this->temp->embed = true;
 
 				unset( $tags[ $key ] );
-				continue;
+			}
+			elseif( 'no_to_menu' === $tag ){
+				$this->opt->to_menu = false;
+
+				unset( $tags[ $key ] );
 			}
 
-			// remove tag if it's not exists in content
-			$patt = ( ( $tag[0] === '.' ) ? 'class=[\'"][^\'"]*' . substr( $tag, 1 ) : "<$tag" );
+		}
+
+		// remove tag if it's not exists in content
+		foreach( $tags as $key => $tag ){
+
+			$patt = ( $tag[0] === '.' )
+				? 'class=[\'"][^\'"]*' . substr( $tag, 1 )
+				: "<$tag";
 
 			if( ! preg_match( "/$patt/i", $content ) ){
 				unset( $tags[ $key ] );
-				continue;
 			}
 		}
 
-		if( ! $tags )
+		if( ! $tags ){
 			return '';
+		}
 
-		// set patterns from given $tags
-		// separate classes & tags & set
-		$class_patt = $tag_patt = $level_tags = array();
+		// PREPARE TAGS ---
+
+		// group HTML classes & tags for regex patterns
+		$class_patt = $tag_patt = [];
+		// collect levels
+		$level_tags = [];
 		foreach( $tags as $tag ){
 			// class
 			if( $tag[0] === '.' ){
 				$tag  = substr( $tag, 1 );
-				$link = & $class_patt;
+				$_link = & $class_patt;
 			}
 			// html tag
 			else{
-				$link = & $tag_patt;
+				$_link = & $tag_patt;
 			}
 
-			$link[] = $tag;
+			$_link[] = $tag;
 			$level_tags[] = $tag;
 		}
 
-		$this->temp->level_tags = array_flip( $level_tags );
+		$level_tags = array_flip( $level_tags );
+
+		// set equal level if tags specified with tag1|tag2
+		$_prev_tag = '';
+		foreach( $level_tags as $tag => $lvl ){
+
+			if( $_prev_tag && false !== strpos( $this->temp->original_tags, "$_prev_tag|$tag" ) ){
+				$level_tags[ $tag ] = $_prev_lvl;
+			}
+
+			$_prev_tag = $tag;
+			$_prev_lvl = $lvl;
+		}
+
+		// set the levels one by one if they were broken after the last operation
+		$_prev_lvl = 0;
+		foreach( $level_tags as & $lvl ){
+
+			// fix next lvl - it's wrong
+			if( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl+1 ], true ) ){
+				$lvl = $_prev_lvl + 1;
+			}
+
+			$_prev_lvl = $lvl;
+		}
+		unset( $lvl );
+
+		$this->temp->level_tags = $level_tags;
+
+		// COLLECT CONTENTS ---
 
 		// replace all titles & collect contents to $this->contents
+
 		$patt_in = [];
 
 		if( $tag_patt ){
@@ -244,7 +309,8 @@ class Kama_Contents {
 
 		$this->temp->content = $content = $_content; // $_content for check reasone
 
-		// html
+		// HTML ---
+
 		$embed = isset( $this->temp->embed );
 		$title = & $this->opt->title;
 		$is_title = ! $embed && $title;
@@ -310,17 +376,6 @@ class Kama_Contents {
 	}
 
 	/**
-	 * Cut the kamaTOC shortcode from the content.
-	 *
-	 * @param string $text
-	 *
-	 * @return string
-	 */
-	public function strip_shortcode( $text ){
-		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $text );
-	}
-
-	/**
 	 * Callback function to replace and collect contents.
 	 *
 	 * @param array $match
@@ -330,17 +385,17 @@ class Kama_Contents {
 	private function _make_contents_callback( $match ){
 		$temp = & $this->temp;
 
-		// it's only class selector in pattern
+		// it's class selector in pattern
 		if( count( $match ) === 5 ){
 			[ $tag, $attrs, $level_tag, $tag_txt ] = array_slice( $match, 1 );
 		}
-		// it's found tag selector
+		// it's tag selector
 		elseif( count( $match ) === 4 ){
 			[ $tag, $attrs, $tag_txt ] = array_slice( $match, 1 );
 
 			$level_tag = $tag; // class name
 		}
-		// it's found class selector
+		// it's class selector
 		else{
 			[ $tag, $attrs, $level_tag, $tag_txt ] = array_slice( $match, 4 );
 		}
@@ -353,7 +408,7 @@ class Kama_Contents {
 			}
 		}
 
-		$opt = $this->opt; // short love
+		$opt = $this->opt; // simplify
 
 		// if tag contains id attribute it become anchor
 		if(
@@ -362,8 +417,9 @@ class Kama_Contents {
 			preg_match( '/ *(' . preg_quote( $opt->anchor_attr_name, '/' ) . ')=([\'"])(.+?)\2 */i', $attrs, $id_match )
 		){
 			// delete 'id' or 'name' attr from attrs
-			if( in_array( $id_match[1], [ 'id', 'name' ] ) )
+			if( in_array( $id_match[1], [ 'id', 'name' ] ) ){
 				$attrs = str_replace( $id_match[0], '', $attrs );
+			}
 
 			$anchor = $this->_sanitaze_anchor( $id_match[3] );
 		}
@@ -419,14 +475,17 @@ class Kama_Contents {
 				</li>'. "\n";
 		}
 
-		if( $opt->anchor_link )
-			$tag_txt = '<a rel="nofollow" class="kamatoc-anchlink" href="#'. $anchor .'">'. $opt->anchor_link .'</a> ' . $tag_txt;
+		if( $opt->anchor_link ){
+			$tag_txt = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $anchor . '">' . $opt->anchor_link . '</a> ' . $tag_txt;
+		}
 
 		// anchor type: 'a' or 'id'
-		if( $opt->anchor_type === 'a' )
-			$new_el = '<a class="kamatoc-anchor" name="'. $anchor .'"></a>'."\n<$tag $attrs>$tag_txt</$tag>";
-		else
+		if( $opt->anchor_type === 'a' ){
+			$new_el = '<a class="kamatoc-anchor" name="' . $anchor . '"></a>' . "\n<$tag $attrs>$tag_txt</$tag>";
+		}
+		else{
 			$new_el = "\n<$tag id=\"$anchor\" $attrs>$tag_txt</$tag>";
+		}
 
 		$to_menu = '';
 		if( $opt->to_menu ){
@@ -500,7 +559,7 @@ class Kama_Contents {
 	 *
 	 * @return string
 	 */
-	static function _unique_anchor( $anch ){
+	public static function _unique_anchor( $anch ){
 		static $anchors = [];
 
 		// check and unique anchor
@@ -519,4 +578,5 @@ class Kama_Contents {
 	}
 
 }
+
 
