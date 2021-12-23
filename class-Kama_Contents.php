@@ -4,7 +4,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.3.0
+ * @version: 4.3.1
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -99,7 +99,6 @@ class Kama_Contents {
 		$this->set_opt( $args );
 	}
 
-
 	public function set_opt( $args = [] ){
 		$this->opt = (object) array_merge( (array) $this->opt, (array) $args );
 	}
@@ -174,7 +173,7 @@ class Kama_Contents {
 
 		$this->temp->original_tags = $tags;
 
-		// for shortcode
+		// prase tags as string
 		if( is_string( $tags ) ){
 			$extra_tags = [];
 
@@ -210,7 +209,6 @@ class Kama_Contents {
 
 				unset( $tags[ $key ] );
 			}
-
 		}
 
 		// remove tag if it's not exists in content
@@ -230,84 +228,7 @@ class Kama_Contents {
 		}
 
 		// PREPARE TAGS ---
-
-		// group HTML classes & tags for regex patterns
-		$class_patt = $tag_patt = [];
-		// collect levels
-		$level_tags = [];
-		foreach( $tags as $tag ){
-			// class
-			if( $tag[0] === '.' ){
-				$tag  = substr( $tag, 1 );
-				$_link = & $class_patt;
-			}
-			// html tag
-			else{
-				$_link = & $tag_patt;
-			}
-
-			$_link[] = $tag;
-			$level_tags[] = $tag;
-		}
-
-		$level_tags = array_flip( $level_tags );
-
-		// set equal level if tags specified with tag1|tag2
-		$_prev_tag = '';
-		foreach( $level_tags as $tag => $lvl ){
-
-			if( $_prev_tag && false !== strpos( $this->temp->original_tags, "$_prev_tag|$tag" ) ){
-				$level_tags[ $tag ] = $_prev_lvl;
-			}
-
-			$_prev_tag = $tag;
-			$_prev_lvl = $lvl;
-		}
-
-		// set the levels one by one if they were broken after the last operation
-		$_prev_lvl = 0;
-		foreach( $level_tags as & $lvl ){
-
-			// fix next lvl - it's wrong
-			if( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl+1 ], true ) ){
-				$lvl = $_prev_lvl + 1;
-			}
-
-			$_prev_lvl = $lvl;
-		}
-		unset( $lvl );
-
-		$this->temp->level_tags = $level_tags;
-
-		// COLLECT CONTENTS ---
-
-		// replace all titles & collect contents to $this->contents
-
-		$patt_in = [];
-
-		if( $tag_patt ){
-			$patt_in[] = '(?:<(' . implode( '|', $tag_patt ) . ')([^>]*)>(.*?)<\/\1>)';
-		}
-
-		if( $class_patt ){
-			$patt_in[] = '(?:<([^ >]+) ([^>]*class=["\'][^>]*(' . implode( '|', $class_patt ) . ')[^>]*["\'][^>]*)>(.*?)<\/' . ( $patt_in ? '\4' : '\1' ) . '>)';
-		}
-
-		$patt_in = implode( '|', $patt_in );
-
-		$this->temp->content = $content;
-
-		$this->opt->toc_page_url = $this->opt->page_url ?: home_url( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
-
-		// collect and replace
-		$_content = preg_replace_callback( "/$patt_in/is", [ $this, '_make_contents_callback' ], $content, -1, $count );
-
-		if( ! $count || $count < $this->opt->min_found ){
-			unset( $this->temp ); // clear cache
-			return '';
-		}
-
-		$this->temp->content = $content = $_content; // $_content for check reasone
+		$this->collect_contents( $content, $tags );
 
 		// HTML ---
 
@@ -373,6 +294,97 @@ class Kama_Contents {
 		unset( $this->temp ); // clear cache
 
 		return $this->contents;
+	}
+
+	private function collect_contents( string & $content, array $tags ): void {
+
+		// group HTML classes & tags for regex patterns
+		$class_patt = $tag_patt = [];
+		// collect levels
+		$level_tags = [];
+		foreach( $tags as $tag ){
+			// class
+			if( $tag[0] === '.' ){
+				$tag  = substr( $tag, 1 );
+				$_link = & $class_patt;
+			}
+			// html tag
+			else{
+				$_link = & $tag_patt;
+			}
+
+			$_link[] = $tag;
+			$level_tags[] = $tag;
+		}
+
+		$level_tags = array_flip( $level_tags );
+
+		// fix levels if it's not start from zero
+		if( reset( $level_tags ) !== 0 ){
+			while( reset( $level_tags ) !== 0 ){
+				$level_tags = array_map( static function( $val ){ return $val - 1; }, $level_tags );
+			}
+		}
+
+		// set equal level if tags specified with tag1|tag2
+		$_prev_tag = '';
+		foreach( $level_tags as $tag => $lvl ){
+
+			if( $_prev_tag && false !== strpos( $this->temp->original_tags, "$_prev_tag|$tag" ) ){
+				$level_tags[ $tag ] = $_prev_lvl;
+			}
+
+			$_prev_tag = $tag;
+			$_prev_lvl = $lvl;
+		}
+
+		// set the levels one by one if they were broken after the last operation
+		$_prev_lvl = 0;
+		foreach( $level_tags as & $lvl ){
+
+			// fix next lvl - it's wrong
+			if( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl + 1 ], true ) ){
+
+				$lvl = $_prev_lvl + 1;
+			}
+
+			$_prev_lvl = $lvl;
+		}
+		unset( $lvl );
+
+		$this->temp->level_tags = $level_tags;
+
+		// COLLECT CONTENTS ---
+
+		// replace all titles & collect contents to $this->contents
+
+		$patt_in = [];
+
+		if( $tag_patt ){
+			$patt_in[] = '(?:<(' . implode( '|', $tag_patt ) . ')([^>]*)>(.*?)<\/\1>)';
+		}
+
+		if( $class_patt ){
+			$patt_in[] = '(?:<([^ >]+) ([^>]*class=["\'][^>]*(' . implode( '|', $class_patt ) . ')[^>]*["\'][^>]*)>(.*?)<\/' . ( $patt_in ? '\4' : '\1' ) . '>)';
+		}
+
+		$patt_in = implode( '|', $patt_in );
+
+		$this->temp->content = $content;
+
+		$this->opt->toc_page_url = $this->opt->page_url ?: home_url( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
+
+		// collect and replace
+		$content = preg_replace_callback( "/$patt_in/is", [ $this, '_make_contents_callback' ], $content, -1, $count );
+
+		if( ! $count || $count < $this->opt->min_found ){
+			unset( $this->temp ); // clear cache
+
+			return;
+		}
+
+		$this->temp->content = $content;
+
 	}
 
 	/**
@@ -578,5 +590,6 @@ class Kama_Contents {
 	}
 
 }
+
 
 
