@@ -1,10 +1,9 @@
-<?php
 /**
  * Содержание (оглавление) для больших постов.
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.3.1
+ * @version: 4.3.2
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -463,26 +462,28 @@ class Kama_Contents {
 			$cont_elem_txt = preg_replace( '~<img[^>]+>~', '', $cont_elem_txt );
 		}
 
+		// table
 		if( isset( $this->temp->as_table ) ){
 
 			$this->contents[] = "\t".'
 				<tr>
 					<td'. ( $_is_mark ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '' ) .'>
 						<a rel="nofollow" href="'. "$opt->page_url#$anchor" .'">'. $cont_elem_txt .'</a>
+						'.( $_is_mark ? ' <meta itemprop="item" content="'. esc_attr( "$opt->toc_page_url#$anchor" ) .'" />':'' ).'
 						'.( $_is_mark ? ' <meta itemprop="name" content="'. esc_attr( wp_strip_all_tags( $cont_elem_txt ) ) .'" />':'' ).'
-						'.( $_is_mark ? ' <meta itemprop="url" content="'. esc_attr( "$opt->toc_page_url#$anchor" ) .'" />':'' ).'
 						'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
 					</td>
 					<td>'. $tag_desc .'</td>
 				</tr>'. "\n";
 		}
+		// list (li)
 		else {
 
 			$this->contents[] = "\t".'
 				<li'. $sub . ( $_is_mark ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '' ) .'>
 					<a rel="nofollow" href="'. $opt->page_url .'#'. $anchor .'">'. $cont_elem_txt .'</a>
+					'.( $_is_mark ? ' <meta itemprop="item" content="'. esc_attr( "$opt->toc_page_url#$anchor" ) .'" />':'' ).'
 					'.( $_is_mark ? ' <meta itemprop="name" content="'. esc_attr( wp_strip_all_tags( $cont_elem_txt ) ) .'" />':'' ).'
-					'.( $_is_mark ? ' <meta itemprop="url" content="'. esc_attr( "$opt->toc_page_url#$anchor" ) .'" />':'' ).'
 					'.( $_is_mark ? ' <meta itemprop="position" content="'. $temp->counter .'" />':'' ).'
 				</li>'. "\n";
 		}
@@ -590,6 +591,3 @@ class Kama_Contents {
 	}
 
 }
-
-
-
