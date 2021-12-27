@@ -1,6 +1,10 @@
 
+4.3.2 (28-12-2021)
+- bugfix.
+- NEW filer `kamatoc__contents`.
+
 4.3.2 (27-12-2021)
-- Microdata bugfix
+- Microdata bugfix.
 
 4.3.0 (22-12-2021)
 - Ability to set multiple tags for one level: selectors => 'h2|dt h3'.
