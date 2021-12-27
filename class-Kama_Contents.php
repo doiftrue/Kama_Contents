@@ -3,7 +3,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.3.2
+ * @version: 4.3.3
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -11,7 +11,7 @@ class Kama_Contents {
 
 	public $opt = [
 		'margin'           => '2em',
-		'selectors'        => [ 'h2', 'h3', 'h4' ],
+		'selectors'        => 'h2 h3 h4',
 		'to_menu'          => 'к оглавлению ↑',
 		'title'            => 'Оглавление:',
 		'css'              => '
@@ -36,16 +36,29 @@ class Kama_Contents {
 	/**
 	 * Collects html (the contents).
 	 *
-	 * @var
+	 * @var array
 	 */
 	public $contents;
 
+	/**
+	 * @var array
+	 */
 	private $temp;
 
 	/**
 	 * @var Kama_Contents
 	 */
 	public static $inst;
+
+
+	public static function init( $args = [] ){
+
+		self::$inst || self::$inst = new self();
+
+		self::$inst->set_opt( $args );
+
+		return self::$inst;
+	}
 
 	/**
 	 * Create instance.
@@ -54,7 +67,7 @@ class Kama_Contents {
 	 *     Parameters.
 	 *
 	 *     @type string       $margin            Отступ слева у подразделов в px|em|rem.
-	 *     @type string|array $selectors         HTML теги по котором будет строиться оглавление: 'h2 h3 h4'.
+	 *     @type string       $selectors         HTML теги по котором будет строиться оглавление: 'h2 h3 h4'.
 	 *                                           Порядок определяет уровень вложености.
 	 *                                           Можно указать строку или массив: [ 'h2', 'h3', 'h4' ] или 'h2 h3 h4'.
 	 *                                           Можно указать атрибут class: 'h2 .class_name'.
@@ -85,15 +98,6 @@ class Kama_Contents {
 	 *
 	 * @return Kama_Contents
 	 */
-	public static function init( $args = [] ){
-
-		is_null( self::$inst ) && self::$inst = new self( $args );
-
-		$args && self::$inst->set_opt( $args );
-
-		return self::$inst;
-	}
-
 	public function __construct( $args = [] ){
 		$this->set_opt( $args );
 	}
@@ -148,15 +152,15 @@ class Kama_Contents {
 	/**
 	 * Replaces the headings in the passed text (by ref), creates and returns a table of contents.
 	 *
-	 * @param string       $content  The text from which you want to create a table of contents.
-	 * @param array|string $tags     Array of HTML tags to look for in the passed text.
-	 *                               You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
-	 *                               You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
-	 *                               It can be useful for use contents inside the text as a list.
+	 * @param string $content  The text from which you want to create a table of contents.
+	 * @param string $tags     Array of HTML tags to look for in the passed text.
+	 *                         You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
+	 *                         You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
+	 *                         It can be useful for use contents inside the text as a list.
 	 *
 	 * @return string table of contents HTML code.
 	 */
-	public function make_contents( string & $content, $tags = '' ){
+	public function make_contents( string & $content, string $tags = '' ){
 
 		// text is too short
 		if( mb_strlen( strip_tags( $content ) ) < $this->opt->min_length ){
@@ -260,7 +264,7 @@ class Kama_Contents {
 			if( $is_title ){
 				$contents_wrap_patt = '
 					<div class="kamatoc-wrap">
-						<span class="kamatoc-wrap__title">' . $title . '</span>
+						<span class="kamatoc-wrap__title kamatoc_wrap_title_js">' . $title . '</span>
 						%s
 					</div>
 				';
@@ -288,11 +292,17 @@ class Kama_Contents {
 			$js_code = '<script>' . preg_replace( '/[\n\t ]+/', ' ', $this->opt->js ) . '</script>';
 		}
 
-		$this->contents = $css_code . $contents . $js_code;
+		/**
+		 * Allow to change result contents string.
+		 *
+		 * @param string        $contents
+		 * @param Kama_Contents $inst
+		 */
+		$contents = apply_filters( 'kamatoc__contents', "$css_code\n$contents\n$js_code", $this );
 
 		unset( $this->temp ); // clear cache
 
-		return $this->contents;
+		return $contents;
 	}
 
 	private function collect_contents( string & $content, array $tags ): void {
