@@ -1,7 +1,8 @@
 
-4.3.2 (28-12-2021)
+4.3.3 (28-12-2021)
 - bugfix.
 - NEW filer `kamatoc__contents`.
+- REMOVED: `css` parameter. It's better for web optimisation to specify css in css file.
 
 4.3.2 (27-12-2021)
 - Microdata bugfix.
