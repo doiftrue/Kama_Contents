@@ -1,5 +1,5 @@
 /**
- * Содержание (оглавление) для больших постов.
+ * Contents (table of contents) for large posts.
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
@@ -14,12 +14,6 @@ class Kama_Contents {
 		'selectors'        => 'h2 h3 h4',
 		'to_menu'          => 'к оглавлению ↑',
 		'title'            => 'Оглавление:',
-		'css'              => '
-			.kamatoc-wrap{ clear:both; }
-			.kamatoc-wrap__title{ display:block; font-style:italic; padding:1em 0; }
-			.kamatoc-gotop{ display:block; text-align:right; }
-			.kamatoc-anchlink{ color:#ddd!important; position:absolute; margin-left:-1em; }
-		',
 		'js'               => '',
 		'min_found'        => 2,
 		'min_length'       => 2000,
@@ -75,7 +69,6 @@ class Kama_Contents {
 	 *                                           указываем их через |: 'h2|dt h3' или [ 'h2|dt', 'h3' ].
 	 *     @type string       $to_menu           Ссылка на возврат к оглавлению. '' - убрать ссылку.
 	 *     @type string       $title             Заголовок. '' - убрать заголовок.
-	 *     @type string       $css               Css стили. '' - убрать стили.
 	 *     @type string       $js                JS код (добавляется после HTML кода)
 	 *     @type int          $min_found         Минимальное количество найденных тегов, чтобы оглавление выводилось.
 	 *     @type int          $min_length        Минимальная длина (символов) текста, чтобы оглавление выводилось.
@@ -282,15 +275,9 @@ class Kama_Contents {
 			$contents = sprintf( $contents_wrap_patt, $contents );
 		}
 
-		$css_code = $js_code = '';
-
-		if( $this->opt->css ){
-			$css_code = '<style>' . preg_replace( '/[\n\t ]+/', ' ', $this->opt->css ) . '</style>';
-		}
-
-		if( $this->opt->js ){
-			$js_code = '<script>' . preg_replace( '/[\n\t ]+/', ' ', $this->opt->js ) . '</script>';
-		}
+		$js_code = $this->opt->js
+			? '<script>' . preg_replace( '/[\n\t ]+/', ' ', $this->opt->js ) . '</script>'
+			: '';
 
 		/**
 		 * Allow to change result contents string.
@@ -298,7 +285,7 @@ class Kama_Contents {
 		 * @param string        $contents
 		 * @param Kama_Contents $inst
 		 */
-		$contents = apply_filters( 'kamatoc__contents', "$css_code\n$contents\n$js_code", $this );
+		$contents = apply_filters( 'kamatoc__contents', "$contents\n$js_code", $this );
 
 		unset( $this->temp ); // clear cache
 
