@@ -246,7 +246,7 @@ class Kama_Contents {
 		if( isset( $this->temp->as_table ) ){
 
 			$contents = '
-			<table class="kamatoc" id="tocmenu"'. $ItemList .'>
+			<table class="kamatoc kamatoc_js" id="tocmenu"'. $ItemList .'>
 				'. $ItemName .'
 				<thead>
 					<tr>
@@ -274,7 +274,7 @@ class Kama_Contents {
 			}
 
 			$contents = '
-				<ul class="kamatoc" id="tocmenu" '. $ItemList .'>
+				<ul class="kamatoc kamatoc_js" id="tocmenu" '. $ItemList .'>
 					'. $ItemName .'
 					'. implode( '', $this->contents ) .'
 				</ul>';
