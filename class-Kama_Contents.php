@@ -1,3 +1,5 @@
+<?php
+
 /**
  * Contents (table of contents) for large posts.
  *
