@@ -5,7 +5,7 @@
  *
  * @author:  Kama
  * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.3.3
+ * @version: 4.3.4
  *
  * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
  */
@@ -27,6 +27,7 @@ class Kama_Contents {
 		'markup'           => false,
 		'anchor_link'      => '',
 		'tomenu_simcount'  => 800,
+		'leave_tags'      => true,
 	];
 
 	/**
@@ -89,9 +90,10 @@ class Kama_Contents {
 	 *                                           Не имеет смысла, если параметр 'to_menu' отключен. С целью производительности,
 	 *                                           кириллица считается без учета кодировки. Поэтому 800 символов кириллицы -
 	 *                                           это примерно 1600 символов в этом параметре. 800 - расчет для сайтов на кириллице.
-	 * }
+	 *     @type bool|string  $leave_tags        Нужно ли оставлять HTML теги в элементах оглавления. С версии 4.3.4.
+	 *                                           Можно указать только какие теги нужно оставлять. Пр: '<b><strong><var><code>'.
 	 *
-	 * @return Kama_Contents
+	 * }
 	 */
 	public function __construct( $args = [] ){
 		$this->set_opt( $args );
@@ -452,13 +454,26 @@ class Kama_Contents {
 
 		$temp->counter = empty( $temp->counter ) ? 1 : ++$temp->counter;
 
-		// $tag_txt не может содержать A, IMG теги - удалим если надо...
 		$cont_elem_txt = $tag_txt;
-		if( false !== strpos( $cont_elem_txt, '</a>' ) ){
-			$cont_elem_txt = preg_replace( '~<a[^>]+>|</a>~', '', $cont_elem_txt );
+
+		// strip all tags
+		if( ! $opt->leave_tags ){
+			$cont_elem_txt = strip_tags( $cont_elem_txt );
 		}
-		if( false !== strpos( $cont_elem_txt, '<img' ) ){
-			$cont_elem_txt = preg_replace( '~<img[^>]+>~', '', $cont_elem_txt );
+		// strip all tags, except specified
+		elseif( is_string( $opt->leave_tags ) ){
+			$cont_elem_txt = strip_tags( $cont_elem_txt, $opt->leave_tags  );
+		}
+		// leave tags
+		// $tag_txt не может содержать A, IMG теги - удалим если надо...
+		else {
+
+			if( false !== strpos( $cont_elem_txt, '</a>' ) ){
+				$cont_elem_txt = preg_replace( '~<a[^>]+>|</a>~', '', $cont_elem_txt );
+			}
+			if( false !== strpos( $cont_elem_txt, '<img' ) ){
+				$cont_elem_txt = preg_replace( '~<img[^>]+>~', '', $cont_elem_txt );
+			}
 		}
 
 		// table
