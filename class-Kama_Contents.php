@@ -27,7 +27,7 @@ class Kama_Contents {
 		'markup'           => false,
 		'anchor_link'      => '',
 		'tomenu_simcount'  => 800,
-		'leave_tags'      => true,
+		'leave_tags'       => true,
 	];
 
 	/**
@@ -77,7 +77,7 @@ class Kama_Contents {
 	 *     @type int          $min_length        Минимальная длина (символов) текста, чтобы оглавление выводилось.
 	 *     @type string       $page_url          Ссылка на страницу для которой собирается оглавление.
 	 *                                           Если оглавление выводиться на другой странице...
-	 *     @type string       $shortcode         Название шоткода.
+	 *     @type string       $shortcode         Название шоткода. По умолчанию: 'contents'.
 	 *     @type string       $spec              Оставлять символы в анкорах. For example: `'.+$*=`.
 	 *     @type string       $anchor_type       Какой тип анкора использовать: 'a' - `<a name="anchor"></a>` или 'id'.
 	 *     @type string       $anchor_attr_name  Название атрибута тега из значения которого будет браться
@@ -91,7 +91,7 @@ class Kama_Contents {
 	 *                                           кириллица считается без учета кодировки. Поэтому 800 символов кириллицы -
 	 *                                           это примерно 1600 символов в этом параметре. 800 - расчет для сайтов на кириллице.
 	 *     @type bool|string  $leave_tags        Нужно ли оставлять HTML теги в элементах оглавления. С версии 4.3.4.
-	 *                                           Можно указать только какие теги нужно оставлять. Пр: '<b><strong><var><code>'.
+	 *                                           Можно указать только какие теги нужно оставлять. Пр: `'<b><strong><var><code>'`.
 	 *
 	 * }
 	 */
