@@ -261,7 +261,7 @@ class Kama_Contents {
 			if( $is_title ){
 				$contents_wrap_patt = '
 					<div class="kamatoc-wrap">
-						<span class="kamatoc-wrap__title kamatoc_wrap_title_js">' . $title . '</span>
+						<div class="kamatoc-wrap__title kamatoc_wrap_title_js">' . $title . '</div>
 						%s
 					</div>
 				';
