@@ -1,4 +1,7 @@
 
+4.3.4 (08-06-2022)
+- NEW: 'leave_tags' parameter added.
+
 4.3.3 (28-12-2021)
 - bugfix.
 - NEW filer `kamatoc__contents`.
