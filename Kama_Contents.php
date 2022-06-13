@@ -128,11 +128,11 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * }
 	 */
-	public function __construct( $args = [] ){
+	protected function __construct( $args = [] ){
 		$this->set_opt( $args );
 	}
 
-	public function set_opt( $args = [] ){
+	protected function set_opt( $args = [] ){
 		$this->opt = (object) array_merge( self::$default_opt, (array) $args );
 	}
 
@@ -324,7 +324,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return $contents;
 	}
 
-	private function collect_contents( string & $content, array $tags ): void {
+	protected function collect_contents( string & $content, array $tags ): void {
 
 		// group HTML classes & tags for regex patterns
 		$class_patt = $tag_patt = [];
@@ -422,7 +422,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * @return string
 	 */
-	private function _make_contents_callback( $match ){
+	protected function _make_contents_callback( $match ){
 
 		$temp = & $this->temp; // simplify
 
@@ -576,7 +576,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * @return string
 	 */
-	private function _sanitaze_anchor( $anch ){
+	protected function _sanitaze_anchor( $anch ){
 
 		$anch = strip_tags( $anch );
 
@@ -617,7 +617,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * @return string
 	 */
-	private function _unique_anchor( string $anch ): string {
+	protected function _unique_anchor( string $anch ): string {
 
 		if( ! isset( $this->temp->anchors ) ){
 			$this->temp->anchors = [];
