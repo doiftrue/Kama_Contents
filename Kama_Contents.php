@@ -13,44 +13,19 @@ namespace Kama\WP;
 interface Kama_Contents_Interface {
 
 	/**
-	 * Creates an instance of Kama_Contents for later use.
+	 * Creates an instance for later use.
 	 *
-	 * @param array $args
-	 *
-	 * @return Kama_Contents
+	 * @return object Implementation instance.
 	 */
 	public static function init( array $args = [] );
 
-	/**
-	 * Processes the text, turns the shortcode in it into a table of contents.
-	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
-	 *
-	 * @param string $content The text with shortcode.
-	 *
-	 * @return string Processed text with a table of contents, if it has a shotcode.
-	 */
+	/** Processes the text, turns the shortcode in it into a table of contents. */
 	public function apply_shortcode( string $content ): string;
 
-	/**
-	 * Cuts out the kamaTOC shortcode from the content.
-	 *
-	 * @param string $content
-	 *
-	 * @return string
-	 */
+	/** Cuts out the kamaTOC shortcode from the content. */
 	public function strip_shortcode( string $content ): string;
 
-	/**
-	 * Replaces the headings in the past text (by ref), creates and returns a table of contents.
-	 *
-	 * @param string $content  The text from which you want to create a table of contents.
-	 * @param string $tags     Array of HTML tags to look for in the past text.
-	 *                         You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
-	 *                         You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
-	 *                         It can be useful for use contents inside the text as a list.
-	 *
-	 * @return string table of contents HTML code.
-	 */
+	/** Replaces the headings in the $content, creates and returns a table of contents. */
 	public function make_contents( string & $content, string $tags = '' ): string;
 
 }
@@ -94,6 +69,13 @@ class Kama_Contents implements Kama_Contents_Interface {
 	private $temp;
 
 
+	/**
+	 * Creates an instance of Kama_Contents for later use.
+	 *
+	 * @param array $args
+	 *
+	 * @return Kama_Contents
+	 */
 	public static function init( array $args = [] ){
 		static $inst;
 
@@ -154,6 +136,14 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$this->opt = (object) array_merge( self::$default_opt, (array) $args );
 	}
 
+	/**
+	 * Processes the text, turns the shortcode in it into a table of contents.
+	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
+	 *
+	 * @param string $content The text with shortcode.
+	 *
+	 * @return string Processed text with a table of contents, if it has a shotcode.
+	 */
 	public function apply_shortcode( string $content ): string {
 
 		$shortcode = $this->opt->shortcode;
@@ -173,10 +163,28 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return $m[1] . $contents . $m[3];
 	}
 
+	/**
+	 * Cuts out the kamaTOC shortcode from the content.
+	 *
+	 * @param string $content
+	 *
+	 * @return string
+	 */
 	public function strip_shortcode( string $content ): string {
 		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $content );
 	}
 
+	/**
+	 * Replaces the headings in the past text (by ref), creates and returns a table of contents.
+	 *
+	 * @param string $content  The text from which you want to create a table of contents.
+	 * @param string $tags     Array of HTML tags to look for in the past text.
+	 *                         You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
+	 *                         You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
+	 *                         It can be useful for use contents inside the text as a list.
+	 *
+	 * @return string table of contents HTML code.
+	 */
 	public function make_contents( string & $content, string $tags = '' ): string {
 
 		// text is too short
