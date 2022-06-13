@@ -1,7 +1,7 @@
 {
-    "name": "doiftrue/wp-kama-contents",
-    "description": "Contents (table of contents) for large posts.",
-    "keywords": [ "wordpress" ],
+    "name": "doiftrue/wp-kama-toc",
+    "description": "Table of Contents for large posts.",
+    "keywords": [ "WordPress" ],
     "homepage": "https://wp-kama.com/1513",
     "type": "library",
     "license": "MIT",
