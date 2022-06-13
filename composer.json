@@ -1,0 +1,23 @@
+{
+    "name": "doiftrue/wp-kama-contents",
+    "description": "Contents (table of contents) for large posts.",
+    "keywords": [ "wordpress" ],
+    "homepage": "https://wp-kama.com/1513",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kamaev Timur",
+            "homepage": "https://wp-kama.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Kama\\WP\\": ""
+        }
+    }
+}

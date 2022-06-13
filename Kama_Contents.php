@@ -1,17 +1,63 @@
 <?php
 
+namespace Kama\WP;
+
 /**
  * Contents (table of contents) for large posts.
  *
- * @author:  Kama
- * @info:    http://wp-kama.ru/?p=1513
- * @version: 4.3.4
- *
- * @changelog: https://github.com/doiftrue/Kama_Contents/blob/master/CHANGELOG.md
+ * @author  Kama
+ * @see     http://wp-kama.ru/1513
+ * @version 4.3.5
  */
-class Kama_Contents {
 
-	public $opt = [
+interface Kama_Contents_Interface {
+
+	/**
+	 * Creates an instance of Kama_Contents for later use.
+	 *
+	 * @param array $args
+	 *
+	 * @return Kama_Contents
+	 */
+	public static function init( array $args = [] );
+
+	/**
+	 * Processes the text, turns the shortcode in it into a table of contents.
+	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
+	 *
+	 * @param string $content The text with shortcode.
+	 *
+	 * @return string Processed text with a table of contents, if it has a shotcode.
+	 */
+	public function apply_shortcode( string $content ): string;
+
+	/**
+	 * Cuts out the kamaTOC shortcode from the content.
+	 *
+	 * @param string $content
+	 *
+	 * @return string
+	 */
+	public function strip_shortcode( string $content ): string;
+
+	/**
+	 * Replaces the headings in the past text (by ref), creates and returns a table of contents.
+	 *
+	 * @param string $content  The text from which you want to create a table of contents.
+	 * @param string $tags     Array of HTML tags to look for in the past text.
+	 *                         You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
+	 *                         You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
+	 *                         It can be useful for use contents inside the text as a list.
+	 *
+	 * @return string table of contents HTML code.
+	 */
+	public function make_contents( string & $content, string $tags = '' ): string;
+
+}
+
+class Kama_Contents implements Kama_Contents_Interface {
+
+	private static $default_opt = [
 		'margin'           => '2em',
 		'selectors'        => 'h2 h3 h4',
 		'to_menu'          => 'к оглавлению ↑',
@@ -31,6 +77,11 @@ class Kama_Contents {
 	];
 
 	/**
+	 * @var object Instance options.
+	 */
+	private $opt;
+
+	/**
 	 * Collects html (the contents).
 	 *
 	 * @var array
@@ -42,19 +93,19 @@ class Kama_Contents {
 	 */
 	private $temp;
 
-	/**
-	 * @var Kama_Contents
-	 */
-	public static $inst;
 
+	public static function init( array $args = [] ){
+		static $inst;
 
-	public static function init( $args = [] ){
+		$args = array_intersect_key( $args, self::$default_opt ); // leave allowed only
+		$inst_key = md5( serialize( $args ) );
 
-		self::$inst || self::$inst = new self();
+		if( empty( $inst[ $inst_key ] ) ){
+			$inst[ $inst_key ] = new self();
+			$inst[ $inst_key ]->set_opt( $args );
+		}
 
-		self::$inst->set_opt( $args );
-
-		return self::$inst;
+		return $inst[ $inst_key ];
 	}
 
 	/**
@@ -100,30 +151,10 @@ class Kama_Contents {
 	}
 
 	public function set_opt( $args = [] ){
-		$this->opt = (object) array_merge( (array) $this->opt, (array) $args );
+		$this->opt = (object) array_merge( self::$default_opt, (array) $args );
 	}
 
-	/**
-	 * Cut the kamaTOC shortcode from the content.
-	 *
-	 * @param string $text
-	 *
-	 * @return string
-	 */
-	public function strip_shortcode( $text ){
-		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $text );
-	}
-
-	/**
-	 * Processes the text, turns the shortcode in it into a table of contents.
-	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
-	 *
-	 * @param string $content      The text, which has a shortcode.
-	 * @param string $contents_cb  Сallback function that will process the contents list.
-	 *
-	 * @return string Processed text with a table of contents, if it has a shotcode.
-	 */
-	public function shortcode( $content, $contents_cb = '' ){
+	public function apply_shortcode( string $content ): string {
 
 		$shortcode = $this->opt->shortcode;
 
@@ -139,25 +170,14 @@ class Kama_Contents {
 
 		$contents = $this->make_contents( $m[3], $m[2] );
 
-		if( $contents && $contents_cb && is_callable( $contents_cb ) ){
-			$contents = $contents_cb( $contents );
-		}
-
 		return $m[1] . $contents . $m[3];
 	}
 
-	/**
-	 * Replaces the headings in the passed text (by ref), creates and returns a table of contents.
-	 *
-	 * @param string $content  The text from which you want to create a table of contents.
-	 * @param string $tags     Array of HTML tags to look for in the passed text.
-	 *                         You can specify: tag names "h2 h3" or names of CSS classes ".foo .foo2".
-	 *                         You can add "embed" mark here to get <ul> tag only (without header and wrapper block).
-	 *                         It can be useful for use contents inside the text as a list.
-	 *
-	 * @return string table of contents HTML code.
-	 */
-	public function make_contents( string & $content, string $tags = '' ){
+	public function strip_shortcode( string $content ): string {
+		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $content );
+	}
+
+	public function make_contents( string & $content, string $tags = '' ): string {
 
 		// text is too short
 		if( mb_strlen( strip_tags( $content ) ) < $this->opt->min_length ){
@@ -395,7 +415,8 @@ class Kama_Contents {
 	 * @return string
 	 */
 	private function _make_contents_callback( $match ){
-		$temp = & $this->temp;
+
+		$temp = & $this->temp; // simplify
 
 		// it's class selector in pattern
 		if( count( $match ) === 5 ){
@@ -422,7 +443,7 @@ class Kama_Contents {
 
 		$opt = $this->opt; // simplify
 
-		// if tag contains id attribute it become anchor
+		// if tag contains id attribute it becomes anchor.
 		if(
 			$opt->anchor_attr_name
 			&&
@@ -532,8 +553,9 @@ class Kama_Contents {
 			}
 			$simbols_count = $pos - $prevpos;
 
-			if( $simbols_count < $opt->tomenu_simcount )
+			if( $simbols_count < $opt->tomenu_simcount ){
 				$to_menu = '';
+			}
 		}
 
 		return $to_menu . $new_el;
@@ -547,6 +569,7 @@ class Kama_Contents {
 	 * @return string
 	 */
 	private function _sanitaze_anchor( $anch ){
+
 		$anch = strip_tags( $anch );
 
 		$anch = apply_filters( 'kamatoc__sanitaze_anchor_before', $anch, $this );
@@ -576,7 +599,7 @@ class Kama_Contents {
 
 		$anch = apply_filters( 'kamatoc__sanitaze_anchor', $anch, $this );
 
-		return self::_unique_anchor( $anch );
+		return $this->_unique_anchor( $anch );
 	}
 
 	/**
@@ -586,11 +609,14 @@ class Kama_Contents {
 	 *
 	 * @return string
 	 */
-	public static function _unique_anchor( $anch ){
-		static $anchors = [];
+	private function _unique_anchor( string $anch ): string {
+
+		if( ! isset( $this->temp->anchors ) ){
+			$this->temp->anchors = [];
+		}
 
 		// check and unique anchor
-		if( isset( $anchors[ $anch ] ) ){
+		if( isset( $this->temp->anchors[ $anch ] ) ){
 
 			$lastnum = substr( $anch, -1 );
 			$lastnum = is_numeric( $lastnum ) ? $lastnum + 1 : 2;
@@ -599,9 +625,16 @@ class Kama_Contents {
 			return call_user_func( __METHOD__, "$anch-$lastnum" );
 		}
 
-		$anchors[ $anch ] = 1;
+		$this->temp->anchors[ $anch ] = 1;
 
 		return $anch;
+	}
+
+	/**
+	 * Alias of {@see apply_shortcode()}. Legacy.
+	 */
+	public function shortcode( string $content ): string {
+		return $this->apply_shortcode( $content );
 	}
 
 }
