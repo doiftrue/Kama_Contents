@@ -8,6 +8,7 @@ namespace Kama\WP;
  *
  * @author  Kama
  * @see     http://wp-kama.ru/1513
+ *
  * @version 4.3.6
  */
 interface Kama_Contents_Interface {
@@ -449,6 +450,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		else{
 
 			$level = (int) @ $this->temp->level_tags[ $level_tag ];
+
 			if( $level > 0 ){
 				$unit = preg_replace( '/\d/', '', $this->opt->margin ) ?: 'px';
 				$elem_classes = "kamatoc__sub kamatoc__sub_{$level}";
