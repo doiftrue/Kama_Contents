@@ -39,7 +39,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		'to_menu'          => 'к оглавлению ↑',
 		'title'            => 'Оглавление:',
 		'js'               => '',
-		'min_found'        => 2,
+		'min_found'        => 1,
 		'min_length'       => 2000,
 		'page_url'         => '',
 		'shortcode'        => 'contents',
@@ -141,9 +141,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 			return $content;
 		}
 
-		$contents = $this->make_contents( $m[3], $m[2] );
+		$toc = $this->make_contents( $m[3], $m[2] );
 
-		return $m[1] . $contents . $m[3];
+		return $m[1] . $toc . $m[3];
 	}
 
 	/**
@@ -167,7 +167,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *                         "as_table="Title|Desc" - Show as table. First sentence after header will be taken for description.
 	 *                         It can be useful for use contents inside the text as a list.
 	 *
-	 * @return string table of contents HTML code.
+	 * @return string Table of contents HTML.
 	 */
 	public function make_contents( string &$content, string $params = '' ): string {
 
@@ -183,6 +183,8 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$tags = $this->get_actual_tags( $tags, $content );
 
 		if( ! $tags ){
+			unset( $this->temp );
+
 			return '';
 		}
 
@@ -191,9 +193,15 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$this->collect_toc( $content, $tags );
 		$content = $this->temp->content;
 
+		if( count( $this->toc_elems ) < $this->opt->min_found ){
+			unset( $this->temp );
+
+			return '';
+		}
+
 		$contents = $this->toc_html();
 
-		unset( $this->temp ); // clear cache
+		unset( $this->temp );
 
 		return $contents;
 	}
@@ -311,9 +319,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 		// collect and replace
 		$this->temp->content = $content;
 
-		$content = preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1, $count );
+		$content = preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1 );
 
-		if( $count && $count >= $this->opt->min_found ){
+		if( count( $this->toc_elems ) >= $this->opt->min_found ){
 			$this->temp->content = $content;
 		}
 
@@ -429,7 +437,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 			'anchor'     => $anchor,
 			'text'       => $this->_strip_tags_in_elem_txt( $tag_text ),
 			'level'      => $this->temp->tags_levels[ $level_tag ] ?? 0,
-		] );;
+		] );
 
 		if( $this->opt->anchor_link ){
 			$tag_text = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $anchor . '">' . $this->opt->anchor_link . '</a> ' . $tag_text;
