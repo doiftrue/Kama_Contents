@@ -13,11 +13,7 @@ namespace Kama\WP;
  */
 interface Kama_Contents_Interface {
 
-	/**
-	 * Creates an instance by specified parameters.
-	 *
-	 * @return object Implementation instance.
-	 */
+	/** Creates an instance by specified parameters. */
 	public function __construct( array $args = [] );
 
 	/** Processes the text, turns the shortcode in it into a table of contents. */
@@ -33,6 +29,7 @@ interface Kama_Contents_Interface {
 
 class Kama_Contents implements Kama_Contents_Interface {
 
+	use Kama_Contents__Html;
 	use Kama_Contents__Helpers;
 	use Kama_Contents__Legacy;
 
@@ -67,9 +64,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 	/**
 	 * Collects html (the contents).
 	 *
-	 * @var array
+	 * @var TOC_Elem[]
 	 */
-	protected $contents_elems;
+	protected $toc_elems;
 
 	/**
 	 * @var array
@@ -140,7 +137,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		// get contents data
 		// use `[[contents` to escape the shortcode
-		/** @noinspection RegExpRedundantEscape */
 		if( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $m ) ){
 			return $content;
 		}
@@ -181,7 +177,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 		}
 
 		$this->temp = new \stdClass();
-		$this->contents_elems = [];
 
 		$params_array = $this->parse_string_params( $params );
 		$tags = $this->split_params_and_tags( $params_array );
@@ -191,7 +186,10 @@ class Kama_Contents implements Kama_Contents_Interface {
 			return '';
 		}
 
+		$this->temp->toc_page_url = $this->opt->page_url ?: home_url( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
+
 		$this->collect_toc( $content, $tags );
+		$content = $this->temp->content;
 
 		$contents = $this->toc_html();
 
@@ -201,8 +199,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 	}
 
 	/**
-	 * Parse TAGS.
-	 *
 	 * @param string $params
 	 * @param        $mm
 	 * @param string $content
@@ -292,194 +288,35 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * @return void
 	 */
-	protected function collect_toc( string &$content, array $tags ): void {
+	protected function collect_toc( string $content, array $tags ): void {
 
-		$this->_set_level_tags_and_regex_patt( $tags );
+		$this->toc_elems = [];
+
+		$this->_set_tags_levels_and_regex_patt( $tags );
 
 		$patt_in = [];
 
 		if( $this->temp->tag_regex_patt ){
-			$patt_in[] = '(?:<(' . implode( '|', $this->temp->tag_regex_patt ) . ')([^>]*)>(.*?)<\/\1>)';
+			$tags_in = implode( '|', $this->temp->tag_regex_patt );
+			$patt_in[] = "(?:<($tags_in)([^>]*)>(.*?)<\/\\1>)";
 		}
 
 		if( $this->temp->class_regex_patt ){
-			$patt_in[] = '(?:<([^ >]+) ([^>]*class=["\'][^>]*(' . implode( '|', $this->temp->class_regex_patt ) . ')[^>]*["\'][^>]*)>(.*?)<\/' . ( $patt_in ? '\4' : '\1' ) . '>)';
+			$class_in = implode( '|', $this->temp->class_regex_patt );
+			$patt_in[] = "(?:<([^ >]+) ([^>]*class=[\"'][^>]*($class_in)[^>]*[\"'][^>]*)>(.*?)<\/" . ( $patt_in ? '\4' : '\1' ) . '>)';
 		}
 
 		$patt_in = implode( '|', $patt_in );
 
+		// collect and replace
 		$this->temp->content = $content;
 
-		$this->opt->toc_page_url = $this->opt->page_url ?: home_url( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
-
-		// collect and replace
 		$content = preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1, $count );
 
-		if( ! $count || $count < $this->opt->min_found ){
-			unset( $this->temp ); // clear cache
-
-			return;
+		if( $count && $count >= $this->opt->min_found ){
+			$this->temp->content = $content;
 		}
 
-		$this->temp->content = $content;
-	}
-
-	protected function _set_level_tags_and_regex_patt( array $tags ): void {
-
-		// group HTML classes & tags for regex patterns
-		$tag_regex_patt = $class_regex_patt = $level_tags = [];
-
-		foreach( $tags as $tag ){
-			// class
-			if( $tag[0] === '.' ){
-				$tag = substr( $tag, 1 );
-				$_ln = &$class_regex_patt;
-			}
-			// html tag
-			else{
-				$_ln = &$tag_regex_patt;
-			}
-
-			$_ln[] = $tag;
-			$level_tags[] = $tag;
-		}
-
-		$level_tags = array_flip( $level_tags );
-
-		// fix levels if it's not start from zero
-		if( reset( $level_tags ) !== 0 ){
-			while( reset( $level_tags ) !== 0 ){
-				$level_tags = array_map( static function( $val ) {
-					return $val - 1;
-				}, $level_tags );
-			}
-		}
-
-		// set equal level if tags specified with tag1|tag2
-		$_prev_tag = '';
-		foreach( $level_tags as $tag => $lvl ){
-
-			if( $_prev_tag && false !== strpos( $this->temp->original_string_params, "$_prev_tag|$tag" ) ){
-				$level_tags[ $tag ] = $_prev_lvl;
-			}
-
-			$_prev_tag = $tag;
-			$_prev_lvl = $lvl;
-		}
-
-		// set the levels one by one if they were broken after the last operation
-		$_prev_lvl = 0;
-		foreach( $level_tags as & $lvl ){
-
-			// fix next lvl - it's wrong
-			if( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl + 1 ], true ) ){
-
-				$lvl = $_prev_lvl + 1;
-			}
-
-			$_prev_lvl = $lvl;
-		}
-		unset( $lvl );
-
-		$this->temp->level_tags = $level_tags;
-		$this->temp->tag_regex_patt = $tag_regex_patt;
-		$this->temp->class_regex_patt = $class_regex_patt;
-	}
-
-	/**
-	 * Callback function to replace and collect contents.
-	 *
-	 * @param array $match
-	 *
-	 * @return string
-	 */
-	protected function collect_toc_replace_callback( $match ): string {
-
-		[ $full_match, $tag, $attrs, $level_tag, $tag_txt ] = $this->_replace_parse_match( $match );
-
-		$this->temp->counter = empty( $this->temp->counter ) ? 1 : ++$this->temp->counter;
-
-		$toc_elem_text = $this->_strip_tags_in_elem_txt( $tag_txt );
-
-		$anchor = $this->_toc_element_anchor( $tag_txt, $attrs );
-
-		$elem_html = $this->toc_element_html( $full_match, $anchor, $toc_elem_text, $level_tag );
-
-		$this->contents_elems[] = "\t$elem_html\n";
-
-		if( $this->opt->anchor_link ){
-			$tag_txt = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $anchor . '">' . $this->opt->anchor_link . '</a> ' . $tag_txt;
-		}
-
-		// anchor type: 'a' or 'id'
-		if( $this->opt->anchor_type === 'a' ){
-			$new_el = '<a class="kamatoc-anchor" name="' . $anchor . '"></a>' . "\n<$tag $attrs>$tag_txt</$tag>";
-		}
-		else{
-			$new_el = "\n<$tag id=\"$anchor\" $attrs>$tag_txt</$tag>";
-		}
-
-		$to_menu = $this->_to_menu( $full_match );
-
-		return $to_menu . $new_el;
-	}
-
-	protected function toc_element_html( $full_match, $anchor, $toc_elem_text, $level_tag ): string {
-
-		// table
-		if( $this->opt->as_table ){
-
-			// take first sentence
-			$quoted_match = preg_quote( $full_match, '/' );
-			//preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->content, $mm )
-			preg_match( "/$quoted_match\s*<p>(.+?)<\/p>/", $this->temp->content, $mm );
-			$tag_desc = $mm ? $mm[1] : '';
-
-			$elem_html = '
-				<tr>
-					<td {ListElement}>
-						<a rel="nofollow" href="' . "{$this->opt->page_url}#$anchor" . '">' . $toc_elem_text . '</a>
-						{ListElement_item}
-						{ListElement_name}
-						{ListElement_pos}
-					</td>
-					<td>' . $tag_desc . '</td>
-				</tr>';
-		}
-		// list (li)
-		else{
-
-			$level = (int) @ $this->temp->level_tags[ $level_tag ];
-
-			if( $level > 0 ){
-				$unit = preg_replace( '/\d/', '', $this->opt->margin ) ?: 'px';
-				$elem_classes = "kamatoc__sub kamatoc__sub_{$level}";
-				$elem_attr = $this->opt->margin ? ' style="margin-left:' . ( $level * (int) $this->opt->margin ) . $unit . ';"' : '';
-			}
-			else{
-				$elem_classes = 'kamatoc__top';
-				$elem_attr = '';
-			}
-
-			$elem_html = '
-				<li class="'. $elem_classes .'" ' . $elem_attr . '{ListElement}>
-					<a rel="nofollow" href="' . "{$this->opt->page_url}#$anchor" . '">' . $toc_elem_text . '</a>
-					{ListElement_item}
-					{ListElement_name}
-					{ListElement_pos}
-				</li>';
-		}
-
-		$ismk = $this->opt->markup;
-
-		$elem_html = strtr( $elem_html, [
-			'{ListElement}'      => $ismk ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '',
-			'{ListElement_item}' => $ismk ? ' <meta itemprop="item" content="' . esc_attr( "{$this->opt->toc_page_url}#$anchor" ) . '" />' : '',
-			'{ListElement_name}' => $ismk ? ' <meta itemprop="name" content="' . esc_attr( wp_strip_all_tags( $toc_elem_text ) ) . '" />' : '',
-			'{ListElement_pos}'  => $ismk ? ' <meta itemprop="position" content="' . $this->temp->counter . '" />' : '',
-		] );
-
-		return $elem_html;
 	}
 
 	/**
@@ -509,7 +346,109 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return [ $full_match, $tag, $attrs, $level_tag, $tag_txt ];
 	}
 
-	protected function _to_menu( $full_match ){
+	protected function _set_tags_levels_and_regex_patt( array $tags ): void {
+
+		// group HTML classes & tags for regex patterns
+		$tag_regex_patt = $class_regex_patt = $tags_levels = [];
+
+		foreach( $tags as $tag ){
+			// class
+			if( $tag[0] === '.' ){
+				$tag = substr( $tag, 1 );
+				$_ln = &$class_regex_patt;
+			}
+			// html tag
+			else{
+				$_ln = &$tag_regex_patt;
+			}
+
+			$_ln[] = $tag;
+			$tags_levels[] = $tag;
+		}
+
+		$tags_levels = array_flip( $tags_levels );
+
+		// fix levels if it's not start from zero
+		if( reset( $tags_levels ) !== 0 ){
+			while( reset( $tags_levels ) !== 0 ){
+				$tags_levels = array_map( static function( $val ) {
+					return $val - 1;
+				}, $tags_levels );
+			}
+		}
+
+		// set equal level if tags specified with tag1|tag2
+		$_prev_tag = '';
+		foreach( $tags_levels as $tag => $lvl ){
+
+			if( $_prev_tag && false !== strpos( $this->temp->original_string_params, "$_prev_tag|$tag" ) ){
+				$tags_levels[ $tag ] = $_prev_lvl;
+			}
+
+			$_prev_tag = $tag;
+			$_prev_lvl = $lvl;
+		}
+
+		// set levels one by one, if they have been broken after the last operation
+		$_prev_lvl = 0;
+		foreach( $tags_levels as & $lvl ){
+
+			// fix next lvl - it's wrong
+			if( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl + 1 ], true ) ){
+
+				$lvl = $_prev_lvl + 1;
+			}
+
+			$_prev_lvl = $lvl;
+		}
+		unset( $lvl );
+
+		$this->temp->tags_levels = $tags_levels;
+		$this->temp->tag_regex_patt = $tag_regex_patt;
+		$this->temp->class_regex_patt = $class_regex_patt;
+	}
+
+	/**
+	 * Callback function to replace and collect contents.
+	 *
+	 * @param array $match
+	 *
+	 * @return string
+	 */
+	protected function collect_toc_replace_callback( $match ): string {
+
+		[ $full_match, $tag, $attrs, $level_tag, $tag_text ] = $this->_replace_parse_match( $match );
+
+		$this->temp->counter = empty( $this->temp->counter ) ? 1 : $this->temp->counter + 1;
+
+		$anchor = $this->_toc_element_anchor( $tag_text, $attrs );
+
+		$this->toc_elems[] = new TOC_Elem( [
+			'full_match' => $full_match,
+			'tag'        => $tag,
+			'anchor'     => $anchor,
+			'text'       => $this->_strip_tags_in_elem_txt( $tag_text ),
+			'level'      => $this->temp->tags_levels[ $level_tag ] ?? 0,
+		] );;
+
+		if( $this->opt->anchor_link ){
+			$tag_text = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $anchor . '">' . $this->opt->anchor_link . '</a> ' . $tag_text;
+		}
+
+		// anchor type: 'a' or 'id'
+		if( $this->opt->anchor_type === 'a' ){
+			$new_el = '<a class="kamatoc-anchor" name="' . $anchor . '"></a>' . "\n<$tag $attrs>$tag_text</$tag>";
+		}
+		else{
+			$new_el = "\n<$tag id=\"$anchor\" $attrs>$tag_text</$tag>";
+		}
+
+		$to_menu = $this->_to_menu_link( $full_match );
+
+		return $to_menu . $new_el;
+	}
+
+	protected function _to_menu_link( $full_match ){
 
 		if( ! $this->opt->to_menu ){
 			return '';
@@ -540,9 +479,26 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return $to_menu;
 	}
 
+
+}
+
+trait Kama_Contents__Html {
+
 	/**
+	 *
 	 * @return string
 	 */
+	protected function _toc_html(): string {
+
+		$toc = '';
+		foreach( $this->toc_elems as $elem ){
+			$elem_html = $this->toc_element_html( $elem );
+			$toc .= "\t$elem_html\n";
+		}
+
+		return $toc;
+	}
+
 	protected function toc_html(): string {
 
 		// table
@@ -558,7 +514,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 					</tr>
 				</thead>
 				<tbody>
-					' . implode( '', $this->contents_elems ) . '
+					' . $this->_toc_html() . '
 				</tbody>
 			</table>';
 		}
@@ -581,7 +537,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 			$contents = '
 				<ul id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
 					{ItemName}
-					' . implode( '', $this->contents_elems ) . '
+					' . $this->_toc_html() . '
 				</ul>';
 
 			$contents = sprintf( $contents_wrap_patt, $contents );
@@ -591,7 +547,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 			? '<script>' . preg_replace( '/[\n\t ]+/', ' ', $this->opt->js ) . '</script>'
 			: '';
 
-		$contents = $this->add_markup( $contents );
+		$contents = $this->replace_markup( $contents );
 
 		/**
 		 * Allow to change result contents string.
@@ -602,13 +558,81 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return apply_filters( 'kamatoc__contents', "$contents\n$js_code", $this );
 	}
 
-	protected function add_markup( $html ){
+	protected function toc_element_html( TOC_Elem $elem ): string {
+
+		// table
+		if( $this->opt->as_table ){
+
+			// take first sentence
+			$quoted_match = preg_quote( $elem->full_match, '/' );
+			//preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->content, $mm )
+			preg_match( "/$quoted_match\s*<p>(.+?)<\/p>/", $this->temp->content, $mm );
+			$tag_desc = $mm ? $mm[1] : '';
+
+			$elem_html = '
+				<tr>
+					<td {ListElement}>
+						<a rel="nofollow" href="' . "{$this->opt->page_url}#$elem->anchor" . '">' . $elem->text . '</a>
+						{ListElement_item}
+						{ListElement_name}
+						{ListElement_pos}
+					</td>
+					<td>' . $tag_desc . '</td>
+				</tr>';
+		}
+		// list (li)
+		else{
+
+			if( $elem->level > 0 ){
+				$unit = preg_replace( '/\d/', '', $this->opt->margin ) ?: 'px';
+				$elem_classes = "kamatoc__sub kamatoc__sub_{$elem->level}";
+				$elem_attr = $this->opt->margin ? ' style="margin-left:' . ( $elem->level * (int) $this->opt->margin ) . $unit . ';"' : '';
+			}
+			else{
+				$elem_classes = 'kamatoc__top';
+				$elem_attr = '';
+			}
+
+			$elem_html = '
+				<li class="'. $elem_classes .'" ' . $elem_attr . '{ListElement}>
+					<a rel="nofollow" href="' . "{$this->opt->page_url}#$elem->anchor" . '">' . $elem->text . '</a>
+					{ListElement_item}
+					{ListElement_name}
+					{ListElement_pos}
+				</li>';
+		}
+
+		$elem_html = $this->replace_elem_markup( $elem_html, $elem );
+
+		/**
+		 * Allow to change single TOC element HTML.
+		 *
+		 * @param string        $elem_html
+		 */
+		return apply_filters( 'kamatoc__elem_html', $elem_html );
+	}
+
+	protected function replace_markup( $html ): string {
 
 		$is = $this->opt->markup;
 
 		$replace = [
 			'{ItemList}' => $is ? ' itemscope itemtype="https://schema.org/ItemList"' : '',
 			'{ItemName}' => $is ? '<meta itemprop="name" content="' . esc_attr( wp_strip_all_tags( $this->opt->title ) ) . '" />' : '',
+		];
+
+		return strtr( $html, $replace );
+	}
+
+	protected function replace_elem_markup( $html, TOC_Elem $elem ): string {
+
+		$is = $this->opt->markup;
+
+		$replace = [
+			'{ListElement}'      => $is ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '',
+			'{ListElement_item}' => $is ? ' <meta itemprop="item" content="' . esc_attr( "{$this->temp->toc_page_url}#$elem->anchor" ) . '" />' : '',
+			'{ListElement_name}' => $is ? ' <meta itemprop="name" content="' . esc_attr( wp_strip_all_tags( $elem->text ) ) . '" />' : '',
+			'{ListElement_pos}'  => $is ? ' <meta itemprop="position" content="' . $this->temp->counter . '" />' : '',
 		];
 
 		return strtr( $html, $replace );
@@ -858,4 +882,23 @@ trait Kama_Contents__Legacy {
 	}
 
 }
+
+class TOC_Elem {
+
+	public $full_match;
+	public $tag;
+	public $anchor;
+	public $text;
+	public $level;
+
+	public function __construct( array $data ){
+
+		foreach( $data as $key => $val ){
+			$this->$key = $val;
+		}
+	}
+
+}
+
+
 
