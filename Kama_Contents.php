@@ -9,7 +9,7 @@ namespace Kama\WP;
  * @author  Kama
  * @see     http://wp-kama.ru/1513
  *
- * @version 4.3.6
+ * @version 4.3.7
  */
 interface Kama_Contents_Interface {
 
@@ -841,7 +841,7 @@ trait Kama_Contents__Helpers {
 			$lastnum = is_numeric( $lastnum ) ? $lastnum + 1 : 2;
 			$anch = preg_replace( '/-\d$/', '', $anch );
 
-			return call_user_func( __METHOD__, "$anch-$lastnum" );
+			return $this->{ __FUNCTION__ }( "$anch-$lastnum" );
 		}
 
 		$this->temp->anchors[ $anch ] = 1;
