@@ -25,7 +25,7 @@ interface Kama_Contents_Interface {
  * @author  Kama
  * @see     http://wp-kama.ru/1513
  *
- * @version 4.3.8
+ * @version 4.3.9
  */
 class Kama_Contents implements Kama_Contents_Interface {
 
