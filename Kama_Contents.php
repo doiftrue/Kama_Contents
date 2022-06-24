@@ -3,14 +3,6 @@
 
 namespace Kama\WP;
 
-/**
- * Contents (table of contents) for large posts.
- *
- * @author  Kama
- * @see     http://wp-kama.ru/1513
- *
- * @version 4.3.7
- */
 interface Kama_Contents_Interface {
 
 	/** Creates an instance by specified parameters. */
@@ -27,6 +19,14 @@ interface Kama_Contents_Interface {
 
 }
 
+/**
+ * Contents (table of contents) for large posts.
+ *
+ * @author  Kama
+ * @see     http://wp-kama.ru/1513
+ *
+ * @version 4.3.8
+ */
 class Kama_Contents implements Kama_Contents_Interface {
 
 	use Kama_Contents__Html;
@@ -191,7 +191,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$this->temp->toc_page_url = $this->opt->page_url ?: home_url( parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
 
 		$this->collect_toc( $content, $tags );
-		$content = $this->temp->content;
 
 		if( count( $this->toc_elems ) < $this->opt->min_found ){
 			unset( $this->temp );
@@ -296,7 +295,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * @return void
 	 */
-	protected function collect_toc( string $content, array $tags ): void {
+	protected function collect_toc( string & $content, array $tags ): void {
 
 		$this->toc_elems = [];
 
@@ -317,12 +316,12 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$patt_in = implode( '|', $patt_in );
 
 		// collect and replace
-		$this->temp->content = $content;
+		$this->temp->orig_content = $content;
 
-		$content = preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1 );
+		$new_content = preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1 );
 
 		if( count( $this->toc_elems ) >= $this->opt->min_found ){
-			$this->temp->content = $content;
+			$content = $new_content;
 		}
 
 	}
@@ -467,8 +466,8 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		// remove '$to_menu' if simbols beatween $to_menu too small (< 300)
 
-		// mb_strpos( $this->temp->content, $full_match ) - в 150 раз медленнее!
-		$elpos = strpos( $this->temp->content, $full_match );
+		// mb_strpos( $this->temp->orig_content, $full_match ) - в 150 раз медленнее!
+		$elpos = strpos( $this->temp->orig_content, $full_match );
 
 		if( empty( $this->temp->elpos ) ){
 			$prevpos = 0;
@@ -573,8 +572,8 @@ trait Kama_Contents__Html {
 
 			// take first sentence
 			$quoted_match = preg_quote( $elem->full_match, '/' );
-			//preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->content, $mm )
-			preg_match( "/$quoted_match\s*<p>(.+?)<\/p>/", $this->temp->content, $mm );
+			//preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->orig_content, $mm )
+			preg_match( "/$quoted_match\s*<p>(.+?)<\/p>/", $this->temp->orig_content, $mm );
 			$tag_desc = $mm ? $mm[1] : '';
 
 			$elem_html = '
