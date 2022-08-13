@@ -25,7 +25,7 @@ interface Kama_Contents_Interface {
  * @author  Kama
  * @see     http://wp-kama.ru/1513
  *
- * @version 4.3.9
+ * @version 4.3.10
  */
 class Kama_Contents implements Kama_Contents_Interface {
 
@@ -82,9 +82,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *     @type string      $margin           Отступ слева у подразделов в px|em|rem.
 	 *     @type string      $selectors        HTML теги по котором будет строиться оглавление: 'h2 h3 h4'.
 	 *                                         Порядок определяет уровень вложености.
-	 *                                         Можно указать строку или массив: [ 'h2', 'h3', 'h4' ] или 'h2 h3 h4'.
-	 *                                         Можно указать атрибут class: 'h2 .class_name'.
-	 *                                         Если нужно чтобы разные теги были на одном уровне,
+	 *                                         Можно указать строку/массив: 'h2 h3 h4' или [ 'h2', 'h3', 'h4' ].
+	 *                                         Можно указать атрибут/class: 'h2 .class_name'.
+	 *                                         Если нужно, чтобы разные теги были на одном уровне,
 	 *                                         указываем их через |: 'h2|dt h3' или [ 'h2|dt', 'h3' ].
 	 *     @type string      $to_menu          Ссылка на возврат к оглавлению. '' - убрать ссылку.
 	 *     @type string      $title            Заголовок. '' - убрать заголовок.
@@ -207,20 +207,12 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	/**
 	 * @param string $params
-	 * @param        $mm
-	 * @param string $content
 	 *
 	 * @return array
 	 */
 	protected function parse_string_params( string $params ): array {
 
-		if( ! $params ){
-			$params = $this->opt->selectors;
-		}
-
 		$this->temp->original_string_params = $params;
-
-		// $extra_tags
 
 		$extra_tags = [];
 
@@ -266,10 +258,18 @@ class Kama_Contents implements Kama_Contents_Interface {
 			}
 		}
 
+		if( ! $tags ){
+			$tags = is_array( $this->opt->selectors )
+				? $this->opt->selectors
+				: explode( ' ', $this->opt->selectors );
+		}
+
 		return $tags;
 	}
 
-	// remove tag if it's not exists in content (for performance)
+	/**
+	 * Remove tag if it's not exists in content (for performance).
+	 */
 	protected function get_actual_tags( array $tags, string $content ): array {
 
 		foreach( $tags as $key => $tag ){

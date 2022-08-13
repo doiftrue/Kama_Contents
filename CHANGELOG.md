@@ -1,4 +1,7 @@
 
+4.3.10 (13-08-2022)
+- BUG: with empty default selectors if extra params are set (for example [contents embed]).
+
 4.3.4 (08-06-2022)
 - NEW: 'leave_tags' parameter added.
 
