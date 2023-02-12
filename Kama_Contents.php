@@ -1,4 +1,5 @@
 <?php
+/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection RegExpRedundantEscape */
 
 namespace Kama\WP;
