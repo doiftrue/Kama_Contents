@@ -1,4 +1,7 @@
 
+4.3.11 (14-12-2023)
+- BUG: `meta itemprop="position"` count was incorrect.
+
 4.3.10 (13-08-2022)
 - BUG: with empty default selectors if extra params are set (for example [contents embed]).
 

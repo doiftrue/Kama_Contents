@@ -1,4 +1,13 @@
 <?php
+/**
+ * Contents (table of contents) for large posts.
+ *
+ * @author  Kama
+ * @see     http://wp-kama.ru/1513
+ * @require PHP 7.1
+ *
+ * @version 4.3.11
+ */
 /** @noinspection RegExpRedundantEscape */
 
 namespace Kama\WP;
@@ -19,14 +28,6 @@ interface Kama_Contents_Interface {
 
 }
 
-/**
- * Contents (table of contents) for large posts.
- *
- * @author  Kama
- * @see     http://wp-kama.ru/1513
- *
- * @version 4.3.10
- */
 class Kama_Contents implements Kama_Contents_Interface {
 
 	use Kama_Contents__Html;
@@ -74,8 +75,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 	private $temp;
 
 	/**
-	 * Create instance.
-	 *
 	 * @param array      $args {
 	 *     Parameters.
 	 *
@@ -123,7 +122,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 * Processes the text, turns the shortcode in it into a table of contents.
 	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
 	 *
-	 * @param string $content  The text with shortcode.
+	 * @param string $content The text with shortcode.
 	 *
 	 * @return string Processed text with a table of contents, if it has a shotcode.
 	 */
@@ -148,10 +147,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	/**
 	 * Cuts out the kamaTOC shortcode from the content.
-	 *
-	 * @param string $content
-	 *
-	 * @return string
 	 */
 	public function strip_shortcode( string $content ): string {
 		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $content );
@@ -205,11 +200,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return $contents;
 	}
 
-	/**
-	 * @param string $params
-	 *
-	 * @return array
-	 */
 	protected function parse_string_params( string $params ): array {
 
 		$this->temp->original_string_params = $params;
@@ -231,11 +221,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	/**
 	 * Split parameters and tags.
-	 *
-	 * @param array  $params
-	 * @param string $content
-	 *
-	 * @return array
 	 */
 	protected function split_params_and_tags( array $params ): array {
 
@@ -292,8 +277,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 *
 	 * @param string $content Changes by ref.
 	 * @param array  $tags    HTML tags (selectors) to collect from content.
-	 *
-	 * @return void
 	 */
 	protected function collect_toc( string & $content, array $tags ): void {
 
@@ -318,7 +301,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		// collect and replace
 		$this->temp->orig_content = $content;
 
-		$new_content = preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1 );
+		$new_content = (string) preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1 );
 
 		if( count( $this->toc_elems ) >= $this->opt->min_found ){
 			$content = $new_content;
@@ -326,12 +309,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	}
 
-	/**
-	 * @param array $match
-	 *
-	 * @return array
-	 */
-	protected function _replace_parse_match( $match ){
+	protected function _replace_parse_match( array $match ): array {
 
 		$full_match = $match[0];
 
@@ -417,89 +395,77 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	/**
 	 * Callback function to replace and collect contents.
-	 *
-	 * @param array $match
-	 *
-	 * @return string
 	 */
-	protected function collect_toc_replace_callback( $match ): string {
+	protected function collect_toc_replace_callback( array $match ): string {
 
 		[ $full_match, $tag, $attrs, $level_tag, $tag_text ] = $this->_replace_parse_match( $match );
 
-		$this->temp->counter = empty( $this->temp->counter ) ? 1 : $this->temp->counter + 1;
+		$this->temp->counter = ( $this->temp->counter ?? 0 ) + 1;
 
-		$anchor = $this->_toc_element_anchor( $tag_text, $attrs );
-
-		$this->toc_elems[] = new TOC_Elem( [
+		$elem = new TOC_Elem( [
 			'full_match' => $full_match,
 			'tag'        => $tag,
-			'anchor'     => $anchor,
+			'anchor'     => $this->_toc_element_anchor( $tag_text, $attrs ),
 			'text'       => $this->_strip_tags_in_elem_txt( $tag_text ),
 			'level'      => $this->temp->tags_levels[ $level_tag ] ?? 0,
+			'position'   => $this->temp->counter,
 		] );
 
+		$this->toc_elems[] = $elem;
+
 		if( $this->opt->anchor_link ){
-			$tag_text = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $anchor . '">' . $this->opt->anchor_link . '</a> ' . $tag_text;
+			$tag_text = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $elem->anchor . '">' . $this->opt->anchor_link . '</a> ' . $tag_text;
 		}
 
 		// anchor type: 'a' or 'id'
 		if( $this->opt->anchor_type === 'a' ){
-			$new_el = '<a class="kamatoc-anchor" name="' . $anchor . '"></a>' . "\n<$tag $attrs>$tag_text</$tag>";
+			$new_el = '<a class="kamatoc-anchor" name="' . $elem->anchor . '"></a>' . "\n<$tag $attrs>$tag_text</$tag>";
 		}
 		else{
-			$new_el = "\n<$tag id=\"$anchor\" $attrs>$tag_text</$tag>";
+			$new_el = "\n<$tag id=\"$elem->anchor\" $attrs>$tag_text</$tag>";
 		}
 
-		$to_menu = $this->_to_menu_link( $full_match );
-
-		return $to_menu . $new_el;
+		return $this->_to_menu_link_html( $elem ) . $new_el;
 	}
 
-	protected function _to_menu_link( $full_match ){
+	protected function _to_menu_link_html( TOC_Elem $elem ): string {
 
 		if( ! $this->opt->to_menu ){
 			return '';
 		}
 
-		// go to contents
-		$to_menu = '<a rel="nofollow" class="kamatoc-gotop" href="' . "{$this->opt->page_url}#tocmenu" . '">' . $this->opt->to_menu . '</a>';
-
-		// remove '$to_menu' if simbols beatween $to_menu too small (< 300)
-
 		// mb_strpos( $this->temp->orig_content, $full_match ) - в 150 раз медленнее!
-		$elpos = strpos( $this->temp->orig_content, $full_match );
+		$el_strpos = strpos( $this->temp->orig_content, $elem->full_match );
 
-		if( empty( $this->temp->elpos ) ){
-			$prevpos = 0;
-			$this->temp->elpos = [ $elpos ];
+		if( empty( $this->temp->el_strpos ) ){
+			$prev_el_strpos = 0;
+			$this->temp->el_strpos = [ $el_strpos ];
 		}
 		else{
-			$prevpos = end( $this->temp->elpos );
-			$this->temp->elpos[] = $elpos;
+			$prev_el_strpos = end( $this->temp->el_strpos );
+			$this->temp->el_strpos[] = $el_strpos;
 		}
-		$simbols_count = $elpos - $prevpos;
+		$simbols_count = $el_strpos - $prev_el_strpos;
 
+		// Don't show to_menu link if simbols count beatween two elements is too small (< 300)
 		if( $simbols_count < $this->opt->tomenu_simcount ){
-			$to_menu = '';
+			return '';
 		}
 
-		return $to_menu;
+		return sprintf( '<a rel="nofollow" class="kamatoc-gotop" href="%s">%s</a>',
+			"{$this->opt->page_url}#tocmenu", $this->opt->to_menu
+		);
 	}
-
 
 }
 
 trait Kama_Contents__Html {
 
-	/**
-	 *
-	 * @return string
-	 */
 	protected function _toc_html(): string {
 
 		$toc = '';
 		foreach( $this->toc_elems as $elem ){
-			$elem_html = $this->toc_element_html( $elem );
+			$elem_html = $this->render_item_html( $elem );
 			$toc .= "\t$elem_html\n";
 		}
 
@@ -565,7 +531,7 @@ trait Kama_Contents__Html {
 		return apply_filters( 'kamatoc__contents', "$contents\n$js_code", $this );
 	}
 
-	protected function toc_element_html( TOC_Elem $elem ): string {
+	protected function render_item_html( TOC_Elem $elem ): string {
 
 		// table
 		if( $this->opt->as_table ){
@@ -614,7 +580,7 @@ trait Kama_Contents__Html {
 		/**
 		 * Allow to change single TOC element HTML.
 		 *
-		 * @param string        $elem_html
+		 * @param string $elem_html
 		 */
 		return apply_filters( 'kamatoc__elem_html', $elem_html );
 	}
@@ -639,7 +605,7 @@ trait Kama_Contents__Html {
 			'{ListElement}'      => $is ? ' itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"' : '',
 			'{ListElement_item}' => $is ? ' <meta itemprop="item" content="' . esc_attr( "{$this->temp->toc_page_url}#$elem->anchor" ) . '" />' : '',
 			'{ListElement_name}' => $is ? ' <meta itemprop="name" content="' . esc_attr( wp_strip_all_tags( $elem->text ) ) . '" />' : '',
-			'{ListElement_pos}'  => $is ? ' <meta itemprop="position" content="' . $this->temp->counter . '" />' : '',
+			'{ListElement_pos}'  => $is ? ' <meta itemprop="position" content="' . (int) $elem->position . '" />' : '',
 		];
 
 		return strtr( $html, $replace );
@@ -649,13 +615,7 @@ trait Kama_Contents__Html {
 
 trait Kama_Contents__Helpers {
 
-	/**
-	 * @param string $tag_txt
-	 * @param string $attrs
-	 *
-	 * @return string
-	 */
-	protected function _toc_element_anchor( $tag_txt, $attrs ){
+	protected function _toc_element_anchor( string $tag_txt, string $attrs ): string {
 
 		// if tag contains id|name|... attribute it becomes anchor.
 		if(
@@ -677,12 +637,7 @@ trait Kama_Contents__Helpers {
 		return $anchor;
 	}
 
-	/**
-	 * @param string $tag_txt
-	 *
-	 * @return string
-	 */
-	protected function _strip_tags_in_elem_txt( $tag_txt ){
+	protected function _strip_tags_in_elem_txt( string $tag_txt ): string {
 
 		// strip all tags
 		if( ! $this->opt->leave_tags ){
@@ -708,13 +663,9 @@ trait Kama_Contents__Helpers {
 	}
 
 	/**
-	 * anchor transliteration
-	 *
-	 * @param string $anch
-	 *
-	 * @return string
+	 * Anchor transliteration.
 	 */
-	protected function _sanitaze_anchor( $anch ) {
+	protected function _sanitaze_anchor( string $anch ): string {
 
 		$anch = strip_tags( $anch );
 
@@ -830,10 +781,6 @@ trait Kama_Contents__Helpers {
 
 	/**
 	 * Adds number at the end if this anchor already exists.
-	 *
-	 * @param string $anch
-	 *
-	 * @return string
 	 */
 	protected function _unique_anchor( string $anch ): string {
 
@@ -862,12 +809,8 @@ trait Kama_Contents__Legacy {
 
 	/**
 	 * Creates an instance of Kama_Contents for later use.
-	 *
-	 * @param array $args
-	 *
-	 * @return Kama_Contents
 	 */
-	public static function init( array $args = [] ) {
+	public static function init( array $args = [] ): Kama_Contents {
 		static $inst;
 
 		$args = array_intersect_key( $args, self::$default_opt ); // leave allowed only
@@ -892,11 +835,23 @@ trait Kama_Contents__Legacy {
 
 class TOC_Elem {
 
+	/** @var string */
 	public $full_match;
+
+	/** @var string */
 	public $tag;
+
+	/** @var string */
 	public $anchor;
+
+	/** @var string */
 	public $text;
+
+	/** @var int */
 	public $level;
+
+	/** @var int */
+	public $position;
 
 	public function __construct( array $data ){
 
