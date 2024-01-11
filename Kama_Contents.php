@@ -3,7 +3,7 @@
  * Contents (table of contents) for large posts.
  *
  * @author  Kama
- * @see     http://wp-kama.ru/1513
+ * @see     http://wp-kama.com/2216
  * @require PHP 7.1
  *
  * @version 4.3.11
@@ -38,8 +38,8 @@ class Kama_Contents implements Kama_Contents_Interface {
 	private static $default_opt = [
 		'margin'           => '2em',
 		'selectors'        => 'h2 h3 h4',
-		'to_menu'          => 'к оглавлению ↑',
-		'title'            => 'Оглавление:',
+		'to_menu'          => 'contents ↑',
+		'title'            => 'Table of Contents:',
 		'js'               => '',
 		'min_found'        => 1,
 		'min_length'       => 2000,
@@ -220,9 +220,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 		return array_filter( $params );
 	}
 
-	/**
-	 * Split parameters and tags.
-	 */
 	protected function split_params_and_tags( array $params ): array {
 
 		$tags = [];
