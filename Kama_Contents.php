@@ -6,7 +6,7 @@
  * @see     http://wp-kama.com/2216
  * @require PHP 7.1
  *
- * @version 4.3.11
+ * @version 4.3.12
  */
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection RegExpRedundantEscape */
@@ -365,7 +365,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		foreach( $tags_levels as $tag => $lvl ){
 
 			if( $_prev_tag && false !== strpos( $this->temp->original_string_params, "$_prev_tag|$tag" ) ){
-				$tags_levels[ $tag ] = $_prev_lvl;
+				$tags_levels[ $tag ] = $_prev_lvl ?? 0;
 			}
 
 			$_prev_tag = $tag;
@@ -859,6 +859,5 @@ class TOC_Elem {
 	}
 
 }
-
 
 
