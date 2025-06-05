@@ -6,7 +6,7 @@
  * @see     http://wp-kama.com/2216
  * @require PHP 7.1
  *
- * @version 4.3.12
+ * @version 4.3.13
  */
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection RegExpRedundantEscape */
@@ -42,7 +42,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		'title'            => 'Table of Contents:',
 		'js'               => '',
 		'min_found'        => 1,
-		'min_length'       => 2000,
+		'min_length'       => 500,
 		'page_url'         => '',
 		'shortcode'        => 'contents',
 		'spec'             => '',
