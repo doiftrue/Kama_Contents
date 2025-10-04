@@ -1,3 +1,11 @@
+CHANGELOG
+=========
+
+4.4.0 (4-10-2025)
+- NEW: `$contents->opt` property become public to have access to options in hooks when $this is transferred.
+- NEW: Minimal PHP version changed from 7.1 to 7.4.
+- NEW: `Kama_Contents_Options` class added to set exact types for options.
+- IMP: Minor code improvements.
 
 4.3.11 (14-12-2023)
 - BUG: `meta itemprop="position"` count was incorrect.

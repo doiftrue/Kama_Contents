@@ -4,9 +4,9 @@
  *
  * @author  Kama
  * @see     http://wp-kama.com/2216
- * @require PHP 7.1
+ * @require PHP 7.4
  *
- * @version 4.3.13
+ * @version 4.4.0
  */
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection RegExpRedundantEscape */
@@ -29,94 +29,106 @@ interface Kama_Contents_Interface {
 
 }
 
+class Kama_Contents_Options {
+
+	public string $margin           = '2em';
+	public string $selectors        = 'h2 h3 h4';
+	public string $to_menu          = 'contents ↑';  // '' - no link
+	public string $title            = 'Table of Contents:';
+	public string $js               = '';
+	public int    $min_found        = 1;
+	public int    $min_length       = 500;
+	public string $page_url         = '';
+	public string $shortcode        = 'contents';
+	public string $spec             = '';   // Additional special chars to leave in anchors. Eg: `'.+$*=`.
+	public string $anchor_type      = 'id'; // 'a' - `<a name="anchor"></a>` or 'id'
+	public string $anchor_attr_name = 'id';
+	public bool   $markup           = false; // Enable microdata?
+	public string $anchor_link      = '';
+	public int    $tomenu_simcount  = 800;
+	public string $leave_tags       = 'all'; // all/1 (true) | '' (false) | string with tags like '<b><i><strong>'
+
+	// shortcode additional params
+	public bool   $as_table         = false;
+	public bool   $embed            = false;
+
+	private static array $default_args;
+
+	public function __construct( array $args = [] ) {
+		self::$default_args ??= get_object_vars( $this ); // set default args once
+
+		foreach( self::$default_args as $key => $def_val ){
+			$val = $args[ $key ] ?? $def_val;
+			settype( $val, gettype( $def_val ) );
+			$this->$key = $val;
+		}
+	}
+
+	public static function get_default_args(): array {
+		return self::$default_args ?: ( new self() )::$default_args; // ensure default args are set
+	}
+
+}
+
 class Kama_Contents implements Kama_Contents_Interface {
 
 	use Kama_Contents__Html;
 	use Kama_Contents__Helpers;
 	use Kama_Contents__Legacy;
 
-	private static $default_opt = [
-		'margin'           => '2em',
-		'selectors'        => 'h2 h3 h4',
-		'to_menu'          => 'contents ↑',
-		'title'            => 'Table of Contents:',
-		'js'               => '',
-		'min_found'        => 1,
-		'min_length'       => 500,
-		'page_url'         => '',
-		'shortcode'        => 'contents',
-		'spec'             => '',
-		'anchor_type'      => 'id',
-		'anchor_attr_name' => 'id',
-		'markup'           => false,
-		'anchor_link'      => '',
-		'tomenu_simcount'  => 800,
-		'leave_tags'       => true,
-
-		// shortcode additional params
-		'as_table' => false,
-		'embed'    => false,
-	];
-
-	/**
-	 * @var object Instance options.
-	 */
-	private $opt;
+	public Kama_Contents_Options $opt;
 
 	/**
 	 * Collects html (the contents).
 	 *
 	 * @var TOC_Elem[]
 	 */
-	protected $toc_elems;
+	protected array $toc_elems;
 
 	/**
-	 * @var array
+	 * Temporary data.
 	 */
-	private $temp;
+	private \stdClass $temp;
 
 	/**
 	 * @param array      $args {
 	 *     Parameters.
 	 *
-	 *     @type string      $margin           Отступ слева у подразделов в px|em|rem.
-	 *     @type string      $selectors        HTML теги по котором будет строиться оглавление: 'h2 h3 h4'.
-	 *                                         Порядок определяет уровень вложености.
-	 *                                         Можно указать строку/массив: 'h2 h3 h4' или [ 'h2', 'h3', 'h4' ].
-	 *                                         Можно указать атрибут/class: 'h2 .class_name'.
-	 *                                         Если нужно, чтобы разные теги были на одном уровне,
-	 *                                         указываем их через |: 'h2|dt h3' или [ 'h2|dt', 'h3' ].
-	 *     @type string      $to_menu          Ссылка на возврат к оглавлению. '' - убрать ссылку.
-	 *     @type string      $title            Заголовок. '' - убрать заголовок.
-	 *     @type string      $js               JS код (добавляется после HTML кода)
-	 *     @type int         $min_found        Минимальное количество найденных тегов, чтобы оглавление выводилось.
-	 *     @type int         $min_length       Минимальная длина (символов) текста, чтобы оглавление выводилось.
-	 *     @type string      $page_url         Ссылка на страницу для которой собирается оглавление.
-	 *                                         Если оглавление выводиться на другой странице...
-	 *     @type string      $shortcode        Название шоткода. По умолчанию: 'contents'.
-	 *     @type string      $spec             Оставлять символы в анкорах. For example: `'.+$*=`.
-	 *     @type string      $anchor_type      Какой тип анкора использовать: 'a' - `<a name="anchor"></a>` или 'id'.
-	 *     @type string      $anchor_attr_name Название атрибута тега из значения которого будет браться
-	 *                                         анкор (если этот атрибут есть у тега). Ставим '', чтобы отключить такую проверку...
-	 *     @type bool        $markup           Включить микроразметку?
-	 *     @type string      $anchor_link      Добавить 'знак' перед подзаголовком статьи со ссылкой
-	 *                                         на текущий анкор заголовка. Укажите '#', '&' или что вам нравится.
-	 *     @type int         $tomenu_simcount  Минимальное количество символов между заголовками содержания,
-	 *                                         для которых нужно выводить ссылку "к содержанию".
-	 *                                         Не имеет смысла, если параметр 'to_menu' отключен. С целью производительности,
-	 *                                         кириллица считается без учета кодировки. Поэтому 800 символов кириллицы -
-	 *                                         это примерно 1600 символов в этом параметре. 800 - расчет для сайтов на кириллице.
-	 *     @type bool|string $leave_tags       Нужно ли оставлять HTML теги в элементах оглавления. С версии 4.3.4.
-	 *                                         Можно указать только какие теги нужно оставлять. Пр: `'<b><strong><var><code>'`.
-	 *
+	 *     @type string      $margin           Left margin for subsections in px|em|rem.
+	 *     @type string      $selectors        HTML tags used to build the table of contents: 'h2 h3 h4'.
+	 *                                         The order defines the nesting level.
+	 *                                         Can be a string/array: 'h2 h3 h4' or [ 'h2', 'h3', 'h4' ].
+	 *                                         You can specify an attribute/class: 'h2 .class_name'.
+	 *                                         To make different tags on the same level,
+	 *                                         use |: 'h2|dt h3' or [ 'h2|dt', 'h3' ].
+	 *     @type string      $to_menu          Link to return to the table of contents. '' - remove the link.
+	 *     @type string      $title            Title. '' - remove the title.
+	 *     @type string      $js               JS code (added after the HTML code).
+	 *     @type int         $min_found        Minimum number of found tags required to display the TOC.
+	 *     @type int         $min_length       Minimum text length (in characters) required to display the TOC.
+	 *     @type string      $page_url         URL of the page for which the TOC is generated.
+	 *                                         Useful if the TOC is displayed on another page...
+	 *     @type string      $shortcode        Shortcode name. Default: 'contents'.
+	 *     @type string      $spec             Keep symbols in anchors. For example: `'.+$*=`.
+	 *     @type string      $anchor_type      Type of anchor to use: 'a' - `<a name="anchor"></a>` or 'id'.
+	 *     @type string      $anchor_attr_name The tag attribute name whose value will be used
+	 *                                         as the anchor (if the tag has this attribute). Set '' to disable this check...
+	 *     @type bool        $markup           Enable microdata?
+	 *     @type string      $anchor_link      Add a "sign" before a subheading with a link
+	 *                                         to the current heading anchor. Specify '#', '&', or any symbol you like.
+	 *     @type int         $tomenu_simcount  Minimum number of characters between TOC headings
+	 *                                         to display the "back to contents" link.
+	 *                                         Has no effect if the 'to_menu' parameter is disabled. For performance reasons,
+	 *                                         Cyrillic characters are counted without encoding. Therefore, 800 Cyrillic characters -
+	 *                                         is approximately 1600 characters in this parameter. 800 is recommended for Cyrillic sites.
+	 *     @type string       $leave_tags      Whether to keep HTML tags in TOC items. Since version 4.3.4.
+	 *                                         'all' or '1' (true) - keep all tags.
+	 *                                         '' (false) - remove all tags.
+	 *                                         `'<b><strong><var><code>'` - specify a string with tags to keep.
 	 * }
 	 */
 	public function __construct( array $args = [] ) {
-		$this->set_opt( $args );
-	}
-
-	protected function set_opt( $args = [] ): void {
-		$this->opt = (object) array_merge( self::$default_opt, (array) $args );
+		$this->opt = new Kama_Contents_Options( $args );
 	}
 
 	/**
@@ -234,7 +246,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 				$this->opt->embed = true;
 			}
 			elseif( 'no_to_menu' === $val || 'no_to_menu' === $key ){
-				$this->opt->to_menu = false;
+				$this->opt->to_menu = '';
 			}
 			else {
 				$tags[ $key ] = $val;
@@ -584,7 +596,6 @@ trait Kama_Contents__Html {
 	}
 
 	protected function replace_markup( $html ): string {
-
 		$is = $this->opt->markup;
 
 		$replace = [
@@ -596,7 +607,6 @@ trait Kama_Contents__Html {
 	}
 
 	protected function replace_elem_markup( $html, TOC_Elem $elem ): string {
-
 		$is = $this->opt->markup;
 
 		$replace = [
@@ -614,7 +624,6 @@ trait Kama_Contents__Html {
 trait Kama_Contents__Helpers {
 
 	protected function _toc_element_anchor( string $tag_txt, string $attrs ): string {
-
 		// if tag contains id|name|... attribute it becomes anchor.
 		if(
 			$this->opt->anchor_attr_name
@@ -636,18 +645,19 @@ trait Kama_Contents__Helpers {
 	}
 
 	protected function _strip_tags_in_elem_txt( string $tag_txt ): string {
-
 		// strip all tags
 		if( ! $this->opt->leave_tags ){
-			$tag_txt = strip_tags( $tag_txt );
+			return strip_tags( $tag_txt );
 		}
-		// strip all tags, except specified
-		elseif( is_string( $this->opt->leave_tags ) ){
-			$tag_txt = strip_tags( $tag_txt, $this->opt->leave_tags );
-		}
+
 		// leave tags
 		// $tag_txt не может содержать A, IMG теги - удалим если надо...
-		else{
+		if(
+			'all' === $this->opt->leave_tags
+			|| '1' === $this->opt->leave_tags // legasy when the var was bool type
+		){
+			// remove A, IMG tags if they are in text
+			// links and images in toc is bad idea
 
 			if( false !== strpos( $tag_txt, '</a>' ) ){
 				$tag_txt = preg_replace( '~<a[^>]+>|</a>~', '', $tag_txt );
@@ -655,20 +665,20 @@ trait Kama_Contents__Helpers {
 			if( false !== strpos( $tag_txt, '<img' ) ){
 				$tag_txt = preg_replace( '~<img[^>]+>~', '', $tag_txt );
 			}
+
+			return $tag_txt;
 		}
 
-		return $tag_txt;
+		// strip all tags, except specified (not-empty string passed)
+		return strip_tags( $tag_txt, $this->opt->leave_tags );
 	}
 
 	/**
 	 * Anchor transliteration.
 	 */
 	protected function _sanitaze_anchor( string $anch ): string {
-
 		$anch = strip_tags( $anch );
-
 		$anch = apply_filters( 'kamatoc__sanitaze_anchor_before', $anch, $this );
-
 		$anch = html_entity_decode( $anch );
 
 		// iso9
@@ -811,12 +821,11 @@ trait Kama_Contents__Legacy {
 	public static function init( array $args = [] ): Kama_Contents {
 		static $inst;
 
-		$args = array_intersect_key( $args, self::$default_opt ); // leave allowed only
+		$args = array_intersect_key( $args, Kama_Contents_Options::get_default_args() ); // leave allowed only
 		$inst_key = md5( serialize( $args ) );
 
 		if( empty( $inst[ $inst_key ] ) ){
-			$inst[ $inst_key ] = new self();
-			$inst[ $inst_key ]->set_opt( $args );
+			$inst[ $inst_key ] = new self( $args );
 		}
 
 		return $inst[ $inst_key ];

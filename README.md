@@ -1,7 +1,8 @@
-# Kama_Contents
+Kama_Contents
+=============
 
-Requires: PHP 7.1
+Requires: PHP 7.4+
 
-Класс для создания оглавлений в больших текстах.
+A class for generating tables of contents in large texts.
 
-Подробнее читайте в статье: [Оглавление (содержание) для больших постов](https://wp-kama.ru/id_1513/kama_contents.html)
+Read more in the article: [Table of contents for large posts](https://wp-kama.com/2216/kama_contents)
