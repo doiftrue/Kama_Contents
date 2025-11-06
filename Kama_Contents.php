@@ -6,7 +6,7 @@
  * @see     http://wp-kama.com/2216
  * @require PHP 7.4
  *
- * @version 4.4.0
+ * @version 4.4.1
  */
 /** @noinspection PhpMultipleClassesDeclarationsInOneFile */
 /** @noinspection RegExpRedundantEscape */
@@ -49,7 +49,7 @@ class Kama_Contents_Options {
 	public string $leave_tags       = 'all'; // all/1 (true) | '' (false) | string with tags like '<b><i><strong>'
 
 	// shortcode additional params
-	public bool   $as_table         = false;
+	public array  $as_table         = [];
 	public bool   $embed            = false;
 
 	private static array $default_args;
@@ -94,37 +94,37 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 * @param array      $args {
 	 *     Parameters.
 	 *
-	 *     @type string      $margin           Left margin for subsections in px|em|rem.
-	 *     @type string      $selectors        HTML tags used to build the table of contents: 'h2 h3 h4'.
-	 *                                         The order defines the nesting level.
-	 *                                         Can be a string/array: 'h2 h3 h4' or [ 'h2', 'h3', 'h4' ].
-	 *                                         You can specify an attribute/class: 'h2 .class_name'.
-	 *                                         To make different tags on the same level,
-	 *                                         use |: 'h2|dt h3' or [ 'h2|dt', 'h3' ].
-	 *     @type string      $to_menu          Link to return to the table of contents. '' - remove the link.
-	 *     @type string      $title            Title. '' - remove the title.
-	 *     @type string      $js               JS code (added after the HTML code).
-	 *     @type int         $min_found        Minimum number of found tags required to display the TOC.
-	 *     @type int         $min_length       Minimum text length (in characters) required to display the TOC.
-	 *     @type string      $page_url         URL of the page for which the TOC is generated.
-	 *                                         Useful if the TOC is displayed on another page...
-	 *     @type string      $shortcode        Shortcode name. Default: 'contents'.
-	 *     @type string      $spec             Keep symbols in anchors. For example: `'.+$*=`.
-	 *     @type string      $anchor_type      Type of anchor to use: 'a' - `<a name="anchor"></a>` or 'id'.
-	 *     @type string      $anchor_attr_name The tag attribute name whose value will be used
-	 *                                         as the anchor (if the tag has this attribute). Set '' to disable this check...
-	 *     @type bool        $markup           Enable microdata?
-	 *     @type string      $anchor_link      Add a "sign" before a subheading with a link
-	 *                                         to the current heading anchor. Specify '#', '&', or any symbol you like.
-	 *     @type int         $tomenu_simcount  Minimum number of characters between TOC headings
-	 *                                         to display the "back to contents" link.
-	 *                                         Has no effect if the 'to_menu' parameter is disabled. For performance reasons,
-	 *                                         Cyrillic characters are counted without encoding. Therefore, 800 Cyrillic characters -
-	 *                                         is approximately 1600 characters in this parameter. 800 is recommended for Cyrillic sites.
-	 *     @type string       $leave_tags      Whether to keep HTML tags in TOC items. Since version 4.3.4.
-	 *                                         'all' or '1' (true) - keep all tags.
-	 *                                         '' (false) - remove all tags.
-	 *                                         `'<b><strong><var><code>'` - specify a string with tags to keep.
+	 *     @type string       $margin           Left margin for subsections in px|em|rem.
+	 *     @type string|array $selectors        HTML tags used to build the table of contents: 'h2 h3 h4'.
+	 *                                            The order defines the nesting level.
+	 *                                            Can be a string/array: 'h2 h3 h4' or [ 'h2', 'h3', 'h4' ].
+	 *                                            You can specify an attribute/class: 'h2 .class_name'.
+	 *                                            To make different tags on the same level,
+	 *                                            use |: 'h2|dt h3' or [ 'h2|dt', 'h3' ].
+	 *     @type string       $to_menu          Link to return to the table of contents. '' - remove the link.
+	 *     @type string       $title            Title. '' - remove the title.
+	 *     @type string       $js               JS code (added after the HTML code).
+	 *     @type int          $min_found        Minimum number of found tags required to display the TOC.
+	 *     @type int          $min_length       Minimum text length (in characters) required to display the TOC.
+	 *     @type string       $page_url         URL of the page for which the TOC is generated.
+	 *                                            Useful if the TOC is displayed on another page...
+	 *     @type string       $shortcode        Shortcode name. Default: 'contents'.
+	 *     @type string       $spec             Keep symbols in anchors. For example: `'.+$*=`.
+	 *     @type string       $anchor_type      Type of anchor to use: 'a' - `<a name="anchor"></a>` or 'id'.
+	 *     @type string       $anchor_attr_name The tag attribute name whose value will be used
+	 *                                            as the anchor (if the tag has this attribute). Set '' to disable this check...
+	 *     @type bool         $markup           Enable microdata?
+	 *     @type string       $anchor_link      Add a "sign" before a subheading with a link
+	 *                                            to the current heading anchor. Specify '#', '&', or any symbol you like.
+	 *     @type int          $tomenu_simcount  Minimum number of characters between TOC headings
+	 *                                            to display the "back to contents" link.
+	 *                                            Has no effect if the 'to_menu' parameter is disabled. For performance reasons,
+	 *                                            Cyrillic characters are counted without encoding. Therefore, 800 Cyrillic characters -
+	 *                                            is approximately 1600 characters in this parameter. 800 is recommended for Cyrillic sites.
+	 *     @type string       $leave_tags       Whether to keep HTML tags in TOC items. Since version 4.3.4.
+	 *                                            'all' or '1' (true) - keep all tags.
+	 *                                            '' (false) - remove all tags.
+	 *                                            `'<b><strong><var><code>'` - specify a string with tags to keep.
 	 * }
 	 */
 	public function __construct( array $args = [] ) {
@@ -214,14 +214,12 @@ class Kama_Contents implements Kama_Contents_Interface {
 	}
 
 	protected function parse_string_params( string $params ): array {
-
 		$this->temp->original_string_params = $params;
 
 		$extra_tags = [];
 
-		if( preg_match( '/(as_table)="([^"]+)"/', $params, $mm ) ){
-
-			$extra_tags[ $mm[1] ] = explode( '|', $mm[2] );
+		if( preg_match( '/as_table="([^"]+)"/', $params, $mm ) ){
+			$extra_tags['as_table'] = explode( '|', $mm[1] );
 			$params = str_replace( " $mm[0]", '', $params ); // cut
 		}
 
@@ -233,11 +231,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 	}
 
 	protected function split_params_and_tags( array $params ): array {
-
 		$tags = [];
 
 		foreach( $params as $key => $val ){
-
 			// extra tags
 			if( 'as_table' === $key ){
 				$this->opt->as_table = $val;
@@ -254,9 +250,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 		}
 
 		if( ! $tags ){
-			$tags = is_array( $this->opt->selectors )
-				? $this->opt->selectors
-				: explode( ' ', $this->opt->selectors );
+			$tags = explode( ' ', $this->opt->selectors );
 		}
 
 		return $tags;
@@ -483,10 +477,8 @@ trait Kama_Contents__Html {
 	}
 
 	protected function toc_html(): string {
-
 		// table
 		if( $this->opt->as_table ){
-
 			$contents = '
 			<table id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
 				{ItemName}
@@ -542,10 +534,8 @@ trait Kama_Contents__Html {
 	}
 
 	protected function render_item_html( TOC_Elem $elem ): string {
-
 		// table
 		if( $this->opt->as_table ){
-
 			// take first sentence
 			$quoted_match = preg_quote( $elem->full_match, '/' );
 			//preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->orig_content, $mm )

@@ -1,6 +1,9 @@
 CHANGELOG
 =========
 
+4.4.1 (6-11-2025)
+- FIX: Fatal Error fix around as_table option type declaretion.
+
 4.4.0 (4-10-2025)
 - NEW: `$contents->opt` property become public to have access to options in hooks when $this is transferred.
 - NEW: Minimal PHP version changed from 7.1 to 7.4.
