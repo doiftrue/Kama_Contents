@@ -10,7 +10,7 @@
  * @require PHP 7.4
  * @require WP 5.9
  *
- * @version 4.4.2
+ * @version 4.4.3
  */
 
 namespace Kama\WP;
@@ -166,7 +166,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 * Cuts out the kamaTOC shortcode from the content.
 	 */
 	public function strip_shortcode( string $content ): string {
-		return preg_replace( '~\[' . $this->opt->shortcode . '[^\]]*\]~', '', $content );
+		return preg_replace( '~(?<!\[)\[' . $this->opt->shortcode . '[^\]]*\]~', '', $content );
 	}
 
 	/**
@@ -221,9 +221,10 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		$extra_tags = [];
 
+		// [contents as_table="Title|Desc" h2 h3]
 		if( preg_match( '/as_table="([^"]+)"/', $params, $mm ) ){
-			$extra_tags['as_table'] = explode( '|', $mm[1] );
-			$params = str_replace( " $mm[0]", '', $params ); // cut
+			$extra_tags['as_table'] = explode( '|', $mm[1] ) + [ '', '' ];
+			$params = str_replace( $mm[0], '', $params ); // cut
 		}
 
 		$params = array_map( 'trim', preg_split( '/[ ,|]+/', $params ) );
@@ -479,21 +480,26 @@ trait Kama_Contents__Html {
 	}
 
 	protected function toc_html(): string {
+		$toc_html = $this->_toc_html();
+
 		// table
 		if( $this->opt->as_table ){
-			$contents = '
-			<table id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
-				{ItemName}
-				<thead>
-					<tr>
-						<th>' . esc_html( $this->opt->as_table[0] ) . '</th>
-						<th>' . esc_html( $this->opt->as_table[1] ) . '</th>
-					</tr>
-				</thead>
-				<tbody>
-					' . $this->_toc_html() . '
-				</tbody>
-			</table>';
+			$th1 = esc_html( $this->opt->as_table[0] );
+			$th2 = esc_html( $this->opt->as_table[1] );
+			$contents = <<<HTML
+				<table id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
+					{ItemName}
+					<thead>
+						<tr>
+							<th>$th1</th>
+							<th>$th2</th>
+						</tr>
+					</thead>
+					<tbody>
+						$toc_html
+					</tbody>
+				</table>
+				HTML;
 		}
 		// list
 		else{
@@ -512,7 +518,7 @@ trait Kama_Contents__Html {
 			$contents = <<<HTML
 				<ul id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
 					{ItemName}
-					{$this->_toc_html()}
+					$toc_html
 				</ul>
 				HTML;
 
@@ -810,7 +816,7 @@ trait Kama_Contents__Legacy {
 	 * Creates an instance of Kama_Contents for later use.
 	 */
 	public static function init( array $args = [] ): Kama_Contents {
-		static $inst;
+		static $inst = [];
 
 		$args = array_intersect_key( $args, Kama_Contents_Options::get_default_args() ); // leave allowed only
 		$inst_key = md5( serialize( $args ) );
