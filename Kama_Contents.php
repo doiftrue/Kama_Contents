@@ -1,15 +1,17 @@
 <?php
+/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
+/** @noinspection RegExpRedundantEscape */
 /**
  * Contents (table of contents) for large posts.
  *
  * @author  Kama
  * @see     http://wp-kama.com/2216
- * @require PHP 7.4
  *
- * @version 4.4.1
+ * @require PHP 7.4
+ * @require WP 5.9
+ *
+ * @version 4.4.2
  */
-/** @noinspection PhpMultipleClassesDeclarationsInOneFile */
-/** @noinspection RegExpRedundantEscape */
 
 namespace Kama\WP;
 
@@ -133,29 +135,31 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	/**
 	 * Processes the text, turns the shortcode in it into a table of contents.
-	 * Use shortcode [contents] or [[contents]] to show shortcode as it is.
+	 * Use shortcode [contents] or [[contents]] to show shortcode as is.
 	 *
 	 * @param string $content The text with shortcode.
 	 *
 	 * @return string Processed text with a table of contents, if it has a shotcode.
 	 */
 	public function apply_shortcode( string $content ): string {
-
 		$shortcode = $this->opt->shortcode;
 
-		if( false === strpos( $content, "[$shortcode" ) ){
+		if( ! str_contains( $content, "[$shortcode" ) ){
 			return $content;
 		}
 
-		// get contents data
-		// use `[[contents` to escape the shortcode
-		if( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $m ) ){
+		if( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $mm ) ){
 			return $content;
 		}
 
-		$toc = $this->make_contents( $m[3], $m[2] );
+		// NOTE: sometimes wpautop() wraps shortcode with <p>...</p>
+		$before = preg_replace( '~<p>$~', '', $mm[1] ); // remove wrapper <p>
+		$params = $mm[2];
+		$after  = preg_replace( '~^</p>~', '', $mm[3] ); // remove wrapper </p>
 
-		return $m[1] . $toc . $m[3];
+		$toc = $this->make_contents( $after, $params );
+
+		return $before . $toc . $after;
 	}
 
 	/**
@@ -178,7 +182,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 * @return string Table of contents HTML.
 	 */
 	public function make_contents( string &$content, string $params = '' ): string {
-
 		// text is too short
 		if( mb_strlen( strip_tags( $content ) ) < $this->opt->min_length ){
 			return '';
@@ -466,7 +469,6 @@ class Kama_Contents implements Kama_Contents_Interface {
 trait Kama_Contents__Html {
 
 	protected function _toc_html(): string {
-
 		$toc = '';
 		foreach( $this->toc_elems as $elem ){
 			$elem_html = $this->render_item_html( $elem );
@@ -495,25 +497,24 @@ trait Kama_Contents__Html {
 		}
 		// list
 		else{
-
 			$add_wrapper = $this->opt->title && ! $this->opt->embed;
 			$contents_wrap_patt = '%s';
 
 			if( $add_wrapper ){
-
-				$contents_wrap_patt = '
+				$contents_wrap_patt = <<<HTML
 					<div class="kamatoc-wrap">
-						<div class="kamatoc-wrap__title kamatoc_wrap_title_js">' . $this->opt->title . '</div>
-						'. $contents_wrap_patt .'
+						<div class="kamatoc-wrap__title kamatoc_wrap_title_js">$this->opt->title</div>
+						$contents_wrap_patt
 					</div>
-				';
+					HTML;
 			}
 
-			$contents = '
+			$contents = <<<HTML
 				<ul id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
 					{ItemName}
-					' . $this->_toc_html() . '
-				</ul>';
+					{$this->_toc_html()}
+				</ul>
+				HTML;
 
 			$contents = sprintf( $contents_wrap_patt, $contents );
 		}
@@ -858,5 +859,4 @@ class TOC_Elem {
 	}
 
 }
-
 
