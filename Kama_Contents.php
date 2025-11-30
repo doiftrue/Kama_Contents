@@ -10,7 +10,7 @@
  * @require PHP 7.4
  * @require WP 5.9
  *
- * @version 4.4.3
+ * @version 4.4.4
  */
 
 namespace Kama\WP;
@@ -38,28 +38,28 @@ class Kama_Contents_Options {
 	public string $to_menu          = 'contents ↑';  // '' - no link
 	public string $title            = 'Table of Contents:';
 	public string $js               = '';
-	public int    $min_found        = 1;
-	public int    $min_length       = 500;
+	public int $min_found           = 1;
+	public int $min_length          = 500;
 	public string $page_url         = '';
 	public string $shortcode        = 'contents';
 	public string $spec             = '';   // Additional special chars to leave in anchors. Eg: `'.+$*=`.
 	public string $anchor_type      = 'id'; // 'a' - `<a name="anchor"></a>` or 'id'
 	public string $anchor_attr_name = 'id';
-	public bool   $markup           = false; // Enable microdata?
+	public bool $markup             = false; // Enable microdata?
 	public string $anchor_link      = '';
-	public int    $tomenu_simcount  = 800;
+	public int $tomenu_simcount     = 800;
 	public string $leave_tags       = 'all'; // all/1 (true) | '' (false) | string with tags like '<b><i><strong>'
 
 	// shortcode additional params
-	public array  $as_table         = [];
-	public bool   $embed            = false;
+	public array $as_table = [];
+	public bool $embed     = false;
 
 	private static array $default_args;
 
 	public function __construct( array $args = [] ) {
 		self::$default_args ??= get_object_vars( $this ); // set default args once
 
-		foreach( self::$default_args as $key => $def_val ){
+		foreach ( self::$default_args as $key => $def_val ) {
 			$val = $args[ $key ] ?? $def_val;
 			settype( $val, gettype( $def_val ) );
 			$this->$key = $val;
@@ -144,11 +144,11 @@ class Kama_Contents implements Kama_Contents_Interface {
 	public function apply_shortcode( string $content ): string {
 		$shortcode = $this->opt->shortcode;
 
-		if( ! str_contains( $content, "[$shortcode" ) ){
+		if ( ! str_contains( $content, "[$shortcode" ) ) {
 			return $content;
 		}
 
-		if( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $mm ) ){
+		if ( ! preg_match( "/^(.*)(?<!\[)\[$shortcode([^\]]*)\](.*)$/su", $content, $mm ) ) {
 			return $content;
 		}
 
@@ -183,17 +183,17 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 */
 	public function make_contents( string &$content, string $params = '' ): string {
 		// text is too short
-		if( mb_strlen( strip_tags( $content ) ) < $this->opt->min_length ){
+		if ( mb_strlen( strip_tags( $content ) ) < $this->opt->min_length ) {
 			return '';
 		}
 
 		$this->temp = new \stdClass();
 
 		$params_array = $this->parse_string_params( $params );
-		$tags = $this->split_params_and_tags( $params_array );
-		$tags = $this->get_actual_tags( $tags, $content );
+		$tags         = $this->split_params_and_tags( $params_array );
+		$tags         = $this->get_actual_tags( $tags, $content );
 
-		if( ! $tags ){
+		if ( ! $tags ) {
 			unset( $this->temp );
 
 			return '';
@@ -203,7 +203,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		$this->collect_toc( $content, $tags );
 
-		if( count( $this->toc_elems ) < $this->opt->min_found ){
+		if ( count( $this->toc_elems ) < $this->opt->min_found ) {
 			unset( $this->temp );
 
 			return '';
@@ -222,9 +222,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$extra_tags = [];
 
 		// [contents as_table="Title|Desc" h2 h3]
-		if( preg_match( '/as_table="([^"]+)"/', $params, $mm ) ){
+		if ( preg_match( '/as_table="([^"]+)"/', $params, $mm ) ) {
 			$extra_tags['as_table'] = explode( '|', $mm[1] ) + [ '', '' ];
-			$params = str_replace( $mm[0], '', $params ); // cut
+			$params                 = str_replace( $mm[0], '', $params ); // cut
 		}
 
 		$params = array_map( 'trim', preg_split( '/[ ,|]+/', $params ) );
@@ -237,23 +237,20 @@ class Kama_Contents implements Kama_Contents_Interface {
 	protected function split_params_and_tags( array $params ): array {
 		$tags = [];
 
-		foreach( $params as $key => $val ){
+		foreach ( $params as $key => $val ) {
 			// extra tags
-			if( 'as_table' === $key ){
+			if ( 'as_table' === $key ) {
 				$this->opt->as_table = $val;
-			}
-			elseif( 'embed' === $val || 'embed' === $key ){
+			} elseif ( 'embed' === $val || 'embed' === $key ) {
 				$this->opt->embed = true;
-			}
-			elseif( 'no_to_menu' === $val || 'no_to_menu' === $key ){
+			} elseif ( 'no_to_menu' === $val || 'no_to_menu' === $key ) {
 				$this->opt->to_menu = '';
-			}
-			else {
+			} else {
 				$tags[ $key ] = $val;
 			}
 		}
 
-		if( ! $tags ){
+		if ( ! $tags ) {
 			$tags = explode( ' ', $this->opt->selectors );
 		}
 
@@ -265,13 +262,13 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 */
 	protected function get_actual_tags( array $tags, string $content ): array {
 
-		foreach( $tags as $key => $tag ){
+		foreach ( $tags as $key => $tag ) {
 
 			$patt = ( $tag[0] === '.' )
 				? 'class=[\'"][^\'"]*' . substr( $tag, 1 )
 				: "<$tag";
 
-			if( ! preg_match( "/$patt/i", $content ) ){
+			if ( ! preg_match( "/$patt/i", $content ) ) {
 				unset( $tags[ $key ] );
 			}
 		}
@@ -286,7 +283,7 @@ class Kama_Contents implements Kama_Contents_Interface {
 	 * @param string $content Changes by ref.
 	 * @param array  $tags    HTML tags (selectors) to collect from content.
 	 */
-	protected function collect_toc( string & $content, array $tags ): void {
+	protected function collect_toc( string &$content, array $tags ): void {
 
 		$this->toc_elems = [];
 
@@ -294,13 +291,13 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		$patt_in = [];
 
-		if( $this->temp->tag_regex_patt ){
-			$tags_in = implode( '|', $this->temp->tag_regex_patt );
+		if ( $this->temp->tag_regex_patt ) {
+			$tags_in   = implode( '|', $this->temp->tag_regex_patt );
 			$patt_in[] = "(?:<($tags_in)([^>]*)>(.*?)<\/\\1>)";
 		}
 
-		if( $this->temp->class_regex_patt ){
-			$class_in = implode( '|', $this->temp->class_regex_patt );
+		if ( $this->temp->class_regex_patt ) {
+			$class_in  = implode( '|', $this->temp->class_regex_patt );
 			$patt_in[] = "(?:<([^ >]+) ([^>]*class=[\"'][^>]*($class_in)[^>]*[\"'][^>]*)>(.*?)<\/" . ( $patt_in ? '\4' : '\1' ) . '>)';
 		}
 
@@ -311,10 +308,9 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		$new_content = (string) preg_replace_callback( "/$patt_in/is", [ $this, 'collect_toc_replace_callback' ], $content, -1 );
 
-		if( count( $this->toc_elems ) >= $this->opt->min_found ){
+		if ( count( $this->toc_elems ) >= $this->opt->min_found ) {
 			$content = $new_content;
 		}
-
 	}
 
 	protected function _replace_parse_match( array $match ): array {
@@ -322,17 +318,17 @@ class Kama_Contents implements Kama_Contents_Interface {
 		$full_match = $match[0];
 
 		// it's class selector in pattern
-		if( count( $match ) === 5 ){
+		if ( count( $match ) === 5 ) {
 			[ $tag, $attrs, $level_tag, $tag_txt ] = array_slice( $match, 1 );
 		}
 		// it's tag selector
-		elseif( count( $match ) === 4 ){
+		elseif ( count( $match ) === 4 ) {
 			[ $tag, $attrs, $tag_txt ] = array_slice( $match, 1 );
 
 			$level_tag = $tag; // class name
 		}
 		// it's class selector
-		else{
+		else {
 			[ $tag, $attrs, $level_tag, $tag_txt ] = array_slice( $match, 4 );
 		}
 
@@ -344,37 +340,40 @@ class Kama_Contents implements Kama_Contents_Interface {
 		// group HTML classes & tags for regex patterns
 		$tag_regex_patt = $class_regex_patt = $tags_levels = [];
 
-		foreach( $tags as $tag ){
+		foreach ( $tags as $tag ) {
 			// class
-			if( $tag[0] === '.' ){
+			if ( $tag[0] === '.' ) {
 				$tag = substr( $tag, 1 );
 				$_ln = &$class_regex_patt;
 			}
 			// html tag
-			else{
+			else {
 				$_ln = &$tag_regex_patt;
 			}
 
-			$_ln[] = $tag;
+			$_ln[]         = $tag;
 			$tags_levels[] = $tag;
 		}
 
 		$tags_levels = array_flip( $tags_levels );
 
 		// fix levels if it's not start from zero
-		if( reset( $tags_levels ) !== 0 ){
-			while( reset( $tags_levels ) !== 0 ){
-				$tags_levels = array_map( static function( $val ) {
-					return $val - 1;
-				}, $tags_levels );
+		if ( reset( $tags_levels ) !== 0 ) {
+			while ( reset( $tags_levels ) !== 0 ) {
+				$tags_levels = array_map(
+					static function( $val ) {
+						return $val - 1;
+					},
+					$tags_levels
+				);
 			}
 		}
 
 		// set equal level if tags specified with tag1|tag2
 		$_prev_tag = '';
-		foreach( $tags_levels as $tag => $lvl ){
+		foreach ( $tags_levels as $tag => $lvl ) {
 
-			if( $_prev_tag && false !== strpos( $this->temp->original_string_params, "$_prev_tag|$tag" ) ){
+			if ( $_prev_tag && false !== strpos( $this->temp->original_string_params, "$_prev_tag|$tag" ) ) {
 				$tags_levels[ $tag ] = $_prev_lvl ?? 0;
 			}
 
@@ -384,10 +383,10 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		// set levels one by one, if they have been broken after the last operation
 		$_prev_lvl = 0;
-		foreach( $tags_levels as & $lvl ){
+		foreach ( $tags_levels as & $lvl ) {
 
 			// fix next lvl - it's wrong
-			if( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl + 1 ], true ) ){
+			if ( ! in_array( $lvl, [ $_prev_lvl, $_prev_lvl + 1 ], true ) ) {
 
 				$lvl = $_prev_lvl + 1;
 			}
@@ -396,8 +395,8 @@ class Kama_Contents implements Kama_Contents_Interface {
 		}
 		unset( $lvl );
 
-		$this->temp->tags_levels = $tags_levels;
-		$this->temp->tag_regex_patt = $tag_regex_patt;
+		$this->temp->tags_levels      = $tags_levels;
+		$this->temp->tag_regex_patt   = $tag_regex_patt;
 		$this->temp->class_regex_patt = $class_regex_patt;
 	}
 
@@ -410,26 +409,27 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 		$this->temp->counter = ( $this->temp->counter ?? 0 ) + 1;
 
-		$elem = new TOC_Elem( [
-			'full_match' => $full_match,
-			'tag'        => $tag,
-			'anchor'     => $this->_toc_element_anchor( $tag_text, $attrs ),
-			'text'       => $this->_strip_tags_in_elem_txt( $tag_text ),
-			'level'      => $this->temp->tags_levels[ $level_tag ] ?? 0,
-			'position'   => $this->temp->counter,
-		] );
+		$elem = new TOC_Elem(
+			[
+				'full_match' => $full_match,
+				'tag'        => $tag,
+				'anchor'     => $this->_toc_element_anchor( $tag_text, $attrs ),
+				'text'       => $this->_strip_tags_in_elem_txt( $tag_text ),
+				'level'      => $this->temp->tags_levels[ $level_tag ] ?? 0,
+				'position'   => $this->temp->counter,
+			]
+		);
 
 		$this->toc_elems[] = $elem;
 
-		if( $this->opt->anchor_link ){
+		if ( $this->opt->anchor_link ) {
 			$tag_text = '<a rel="nofollow" class="kamatoc-anchlink" href="#' . $elem->anchor . '">' . $this->opt->anchor_link . '</a> ' . $tag_text;
 		}
 
 		// anchor type: 'a' or 'id'
-		if( $this->opt->anchor_type === 'a' ){
+		if ( $this->opt->anchor_type === 'a' ) {
 			$new_el = '<a class="kamatoc-anchor" name="' . $elem->anchor . '"></a>' . "\n<$tag $attrs>$tag_text</$tag>";
-		}
-		else{
+		} else {
 			$new_el = "\n<$tag id=\"$elem->anchor\" $attrs>$tag_text</$tag>";
 		}
 
@@ -438,30 +438,31 @@ class Kama_Contents implements Kama_Contents_Interface {
 
 	protected function _to_menu_link_html( TOC_Elem $elem ): string {
 
-		if( ! $this->opt->to_menu ){
+		if ( ! $this->opt->to_menu ) {
 			return '';
 		}
 
 		// mb_strpos( $this->temp->orig_content, $full_match ) - в 150 раз медленнее!
 		$el_strpos = strpos( $this->temp->orig_content, $elem->full_match );
 
-		if( empty( $this->temp->el_strpos ) ){
-			$prev_el_strpos = 0;
+		if ( empty( $this->temp->el_strpos ) ) {
+			$prev_el_strpos        = 0;
 			$this->temp->el_strpos = [ $el_strpos ];
-		}
-		else{
-			$prev_el_strpos = end( $this->temp->el_strpos );
+		} else {
+			$prev_el_strpos          = end( $this->temp->el_strpos );
 			$this->temp->el_strpos[] = $el_strpos;
 		}
 		$simbols_count = $el_strpos - $prev_el_strpos;
 
 		// Don't show to_menu link if simbols count beatween two elements is too small (< 300)
-		if( $simbols_count < $this->opt->tomenu_simcount ){
+		if ( $simbols_count < $this->opt->tomenu_simcount ) {
 			return '';
 		}
 
-		return sprintf( '<a rel="nofollow" class="kamatoc-gotop" href="%s">%s</a>',
-			"{$this->opt->page_url}#tocmenu", $this->opt->to_menu
+		return sprintf(
+			'<a rel="nofollow" class="kamatoc-gotop" href="%s">%s</a>',
+			"{$this->opt->page_url}#tocmenu",
+			$this->opt->to_menu
 		);
 	}
 
@@ -471,9 +472,9 @@ trait Kama_Contents__Html {
 
 	protected function _toc_html(): string {
 		$toc = '';
-		foreach( $this->toc_elems as $elem ){
+		foreach ( $this->toc_elems as $elem ) {
 			$elem_html = $this->render_item_html( $elem );
-			$toc .= "\t$elem_html\n";
+			$toc      .= "\t$elem_html\n";
 		}
 
 		return $toc;
@@ -483,9 +484,9 @@ trait Kama_Contents__Html {
 		$toc_html = $this->_toc_html();
 
 		// table
-		if( $this->opt->as_table ){
-			$th1 = esc_html( $this->opt->as_table[0] );
-			$th2 = esc_html( $this->opt->as_table[1] );
+		if ( $this->opt->as_table ) {
+			$th1      = esc_html( $this->opt->as_table[0] );
+			$th2      = esc_html( $this->opt->as_table[1] );
 			$contents = <<<HTML
 				<table id="tocmenu" class="kamatoc kamatoc_js" {ItemList}>
 					{ItemName}
@@ -502,14 +503,14 @@ trait Kama_Contents__Html {
 				HTML;
 		}
 		// list
-		else{
-			$add_wrapper = $this->opt->title && ! $this->opt->embed;
+		else {
+			$add_wrapper        = $this->opt->title && ! $this->opt->embed;
 			$contents_wrap_patt = '%s';
 
-			if( $add_wrapper ){
+			if ( $add_wrapper ) {
 				$contents_wrap_patt = <<<HTML
 					<div class="kamatoc-wrap">
-						<div class="kamatoc-wrap__title kamatoc_wrap_title_js">$this->opt->title</div>
+						<div class="kamatoc-wrap__title kamatoc_wrap_title_js">{$this->opt->title}</div>
 						$contents_wrap_patt
 					</div>
 					HTML;
@@ -542,10 +543,10 @@ trait Kama_Contents__Html {
 
 	protected function render_item_html( TOC_Elem $elem ): string {
 		// table
-		if( $this->opt->as_table ){
+		if ( $this->opt->as_table ) {
 			// take first sentence
 			$quoted_match = preg_quote( $elem->full_match, '/' );
-			//preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->orig_content, $mm )
+			// preg_match( "/$quoted_match\s*<p>((?:.(?!<\/p>))+)/", $this->temp->orig_content, $mm )
 			preg_match( "/$quoted_match\s*<p>(.+?)<\/p>/", $this->temp->orig_content, $mm );
 			$tag_desc = $mm ? $mm[1] : '';
 
@@ -561,20 +562,19 @@ trait Kama_Contents__Html {
 				</tr>';
 		}
 		// list (li)
-		else{
+		else {
 
-			if( $elem->level > 0 ){
-				$unit = preg_replace( '/\d/', '', $this->opt->margin ) ?: 'px';
+			if ( $elem->level > 0 ) {
+				$unit         = preg_replace( '/\d/', '', $this->opt->margin ) ?: 'px';
 				$elem_classes = "kamatoc__sub kamatoc__sub_{$elem->level}";
-				$elem_attr = $this->opt->margin ? ' style="margin-left:' . ( $elem->level * (int) $this->opt->margin ) . $unit . ';"' : '';
-			}
-			else{
+				$elem_attr    = $this->opt->margin ? ' style="margin-left:' . ( $elem->level * (int) $this->opt->margin ) . $unit . ';"' : '';
+			} else {
 				$elem_classes = 'kamatoc__top';
-				$elem_attr = '';
+				$elem_attr    = '';
 			}
 
 			$elem_html = '
-				<li class="'. $elem_classes .'" ' . $elem_attr . '{ListElement}>
+				<li class="' . $elem_classes . '" ' . $elem_attr . '{ListElement}>
 					<a rel="nofollow" href="' . "{$this->opt->page_url}#$elem->anchor" . '">' . $elem->text . '</a>
 					{ListElement_item}
 					{ListElement_name}
@@ -622,19 +622,18 @@ trait Kama_Contents__Helpers {
 
 	protected function _toc_element_anchor( string $tag_txt, string $attrs ): string {
 		// if tag contains id|name|... attribute it becomes anchor.
-		if(
+		if (
 			$this->opt->anchor_attr_name
 			&&
 			preg_match( '/ *(' . preg_quote( $this->opt->anchor_attr_name, '/' ) . ')=([\'"])(.+?)\2 */i', $attrs, $match_anchor_attr )
-		){
+		) {
 			// delete 'id' or 'name' attr from attrs
-			if( in_array( $match_anchor_attr[1], [ 'id', 'name' ], true ) ){
+			if ( in_array( $match_anchor_attr[1], [ 'id', 'name' ], true ) ) {
 				$attrs = str_replace( $match_anchor_attr[0], '', $attrs );
 			}
 
 			$anchor = $this->_sanitaze_anchor( $match_anchor_attr[3] );
-		}
-		else{
+		} else {
 			$anchor = $this->_sanitaze_anchor( $tag_txt );
 		}
 
@@ -643,23 +642,23 @@ trait Kama_Contents__Helpers {
 
 	protected function _strip_tags_in_elem_txt( string $tag_txt ): string {
 		// strip all tags
-		if( ! $this->opt->leave_tags ){
+		if ( ! $this->opt->leave_tags ) {
 			return strip_tags( $tag_txt );
 		}
 
 		// leave tags
 		// $tag_txt не может содержать A, IMG теги - удалим если надо...
-		if(
+		if (
 			'all' === $this->opt->leave_tags
 			|| '1' === $this->opt->leave_tags // legasy when the var was bool type
-		){
+		) {
 			// remove A, IMG tags if they are in text
 			// links and images in toc is bad idea
 
-			if( false !== strpos( $tag_txt, '</a>' ) ){
+			if ( false !== strpos( $tag_txt, '</a>' ) ) {
 				$tag_txt = preg_replace( '~<a[^>]+>|</a>~', '', $tag_txt );
 			}
-			if( false !== strpos( $tag_txt, '<img' ) ){
+			if ( false !== strpos( $tag_txt, '<img' ) ) {
 				$tag_txt = preg_replace( '~<img[^>]+>~', '', $tag_txt );
 			}
 
@@ -679,100 +678,103 @@ trait Kama_Contents__Helpers {
 		$anch = html_entity_decode( $anch );
 
 		// iso9
-		$anch = strtr( $anch, [
-			'А' => 'A',
-			'Б' => 'B',
-			'В' => 'V',
-			'Г' => 'G',
-			'Д' => 'D',
-			'Е' => 'E',
-			'Ё' => 'YO',
-			'Ж' => 'ZH',
-			'З' => 'Z',
-			'И' => 'I',
-			'Й' => 'J',
-			'К' => 'K',
-			'Л' => 'L',
-			'М' => 'M',
-			'Н' => 'N',
-			'О' => 'O',
-			'П' => 'P',
-			'Р' => 'R',
-			'С' => 'S',
-			'Т' => 'T',
-			'У' => 'U',
-			'Ф' => 'F',
-			'Х' => 'H',
-			'Ц' => 'TS',
-			'Ч' => 'CH',
-			'Ш' => 'SH',
-			'Щ' => 'SHH',
-			'Ъ' => '',
-			'Ы' => 'Y',
-			'Ь' => '',
-			'Э' => 'E',
-			'Ю' => 'YU',
-			'Я' => 'YA',
-			// small
-			'а' => 'a',
-			'б' => 'b',
-			'в' => 'v',
-			'г' => 'g',
-			'д' => 'd',
-			'е' => 'e',
-			'ё' => 'yo',
-			'ж' => 'zh',
-			'з' => 'z',
-			'и' => 'i',
-			'й' => 'j',
-			'к' => 'k',
-			'л' => 'l',
-			'м' => 'm',
-			'н' => 'n',
-			'о' => 'o',
-			'п' => 'p',
-			'р' => 'r',
-			'с' => 's',
-			'т' => 't',
-			'у' => 'u',
-			'ф' => 'f',
-			'х' => 'h',
-			'ц' => 'ts',
-			'ч' => 'ch',
-			'ш' => 'sh',
-			'щ' => 'shh',
-			'ъ' => '',
-			'ы' => 'y',
-			'ь' => '',
-			'э' => 'e',
-			'ю' => 'yu',
-			'я' => 'ya',
-			// other
-			'Ѓ' => 'G',
-			'Ґ' => 'G',
-			'Є' => 'YE',
-			'Ѕ' => 'Z',
-			'Ј' => 'J',
-			'І' => 'I',
-			'Ї' => 'YI',
-			'Ќ' => 'K',
-			'Љ' => 'L',
-			'Њ' => 'N',
-			'Ў' => 'U',
-			'Џ' => 'DH',
-			'ѓ' => 'g',
-			'ґ' => 'g',
-			'є' => 'ye',
-			'ѕ' => 'z',
-			'ј' => 'j',
-			'і' => 'i',
-			'ї' => 'yi',
-			'ќ' => 'k',
-			'љ' => 'l',
-			'њ' => 'n',
-			'ў' => 'u',
-			'џ' => 'dh',
-		] );
+		$anch = strtr(
+			$anch,
+			[
+				'А' => 'A',
+				'Б' => 'B',
+				'В' => 'V',
+				'Г' => 'G',
+				'Д' => 'D',
+				'Е' => 'E',
+				'Ё' => 'YO',
+				'Ж' => 'ZH',
+				'З' => 'Z',
+				'И' => 'I',
+				'Й' => 'J',
+				'К' => 'K',
+				'Л' => 'L',
+				'М' => 'M',
+				'Н' => 'N',
+				'О' => 'O',
+				'П' => 'P',
+				'Р' => 'R',
+				'С' => 'S',
+				'Т' => 'T',
+				'У' => 'U',
+				'Ф' => 'F',
+				'Х' => 'H',
+				'Ц' => 'TS',
+				'Ч' => 'CH',
+				'Ш' => 'SH',
+				'Щ' => 'SHH',
+				'Ъ' => '',
+				'Ы' => 'Y',
+				'Ь' => '',
+				'Э' => 'E',
+				'Ю' => 'YU',
+				'Я' => 'YA',
+				// small
+				'а' => 'a',
+				'б' => 'b',
+				'в' => 'v',
+				'г' => 'g',
+				'д' => 'd',
+				'е' => 'e',
+				'ё' => 'yo',
+				'ж' => 'zh',
+				'з' => 'z',
+				'и' => 'i',
+				'й' => 'j',
+				'к' => 'k',
+				'л' => 'l',
+				'м' => 'm',
+				'н' => 'n',
+				'о' => 'o',
+				'п' => 'p',
+				'р' => 'r',
+				'с' => 's',
+				'т' => 't',
+				'у' => 'u',
+				'ф' => 'f',
+				'х' => 'h',
+				'ц' => 'ts',
+				'ч' => 'ch',
+				'ш' => 'sh',
+				'щ' => 'shh',
+				'ъ' => '',
+				'ы' => 'y',
+				'ь' => '',
+				'э' => 'e',
+				'ю' => 'yu',
+				'я' => 'ya',
+				// other
+				'Ѓ' => 'G',
+				'Ґ' => 'G',
+				'Є' => 'YE',
+				'Ѕ' => 'Z',
+				'Ј' => 'J',
+				'І' => 'I',
+				'Ї' => 'YI',
+				'Ќ' => 'K',
+				'Љ' => 'L',
+				'Њ' => 'N',
+				'Ў' => 'U',
+				'Џ' => 'DH',
+				'ѓ' => 'g',
+				'ґ' => 'g',
+				'є' => 'ye',
+				'ѕ' => 'z',
+				'ј' => 'j',
+				'і' => 'i',
+				'ї' => 'yi',
+				'ќ' => 'k',
+				'љ' => 'l',
+				'њ' => 'n',
+				'ў' => 'u',
+				'џ' => 'dh',
+			]
+		);
 
 		$spec = preg_quote( $this->opt->spec, '/' );
 		$anch = preg_replace( "/[^a-zA-Z0-9_$spec\-]+/", '-', $anch ); // все ненужное на '-'
@@ -789,16 +791,16 @@ trait Kama_Contents__Helpers {
 	 */
 	protected function _unique_anchor( string $anch ): string {
 
-		if( ! isset( $this->temp->anchors ) ){
+		if ( ! isset( $this->temp->anchors ) ) {
 			$this->temp->anchors = [];
 		}
 
 		// check and unique anchor
-		if( isset( $this->temp->anchors[ $anch ] ) ){
+		if ( isset( $this->temp->anchors[ $anch ] ) ) {
 
 			$lastnum = substr( $anch, -1 );
 			$lastnum = is_numeric( $lastnum ) ? $lastnum + 1 : 2;
-			$anch = preg_replace( '/-\d$/', '', $anch );
+			$anch    = preg_replace( '/-\d$/', '', $anch );
 
 			return $this->{ __FUNCTION__ }( "$anch-$lastnum" );
 		}
@@ -818,10 +820,10 @@ trait Kama_Contents__Legacy {
 	public static function init( array $args = [] ): Kama_Contents {
 		static $inst = [];
 
-		$args = array_intersect_key( $args, Kama_Contents_Options::get_default_args() ); // leave allowed only
+		$args     = array_intersect_key( $args, Kama_Contents_Options::get_default_args() ); // leave allowed only
 		$inst_key = md5( serialize( $args ) );
 
-		if( empty( $inst[ $inst_key ] ) ){
+		if ( empty( $inst[ $inst_key ] ) ) {
 			$inst[ $inst_key ] = new self( $args );
 		}
 
@@ -857,9 +859,9 @@ class TOC_Elem {
 	/** @var int */
 	public $position;
 
-	public function __construct( array $data ){
+	public function __construct( array $data ) {
 
-		foreach( $data as $key => $val ){
+		foreach ( $data as $key => $val ) {
 			$this->$key = $val;
 		}
 	}
